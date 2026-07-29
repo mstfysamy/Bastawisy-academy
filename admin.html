@@ -3,74 +3,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الأدمن - Google Sheets</title>
+  <title>لوحة تحكم الأدمن المتكاملة</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 40px; }
-    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 450px; margin: 0 auto; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 30px; }
+    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 450px; margin: 15px auto; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-align: right; }
+    h2 { text-align: center; color: #ffc107; }
+    label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
+    input, button { width: 100%; padding: 10px; margin: 5px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-    button { background: #ffc107; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    button:hover { background: #e0a800; }
-    h2 { color: #ffc107; }
+    button { font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-add { background: #28a745; color: #fff; }
+    .btn-add:hover { background: #218838; }
+    .btn-charge { background: #ffc107; color: #000; }
+    .btn-charge:hover { background: #e0a800; }
+    .btn-delete { background: #dc3545; color: #fff; }
+    .btn-delete:hover { background: #c82333; }
+    .msg { font-size: 13px; text-align: center; margin-top: 5px; }
   </style>
 </head>
 <body>
 
+  <!-- 1. إضافة طالب جديد -->
   <div class="card">
-    <h2>🛠️ لوحة تحكم الأدمن</h2>
-    <p style="color: #aaa; font-size: 13px;">أضف طالب جديد وسجل بياناته في جوجل شيت مباشرة</p>
-    
-    <input type="email" id="new-email" placeholder="البريد الإلكتروني للطالب">
-    <input type="password" id="new-password" placeholder="كلمة السر">
-    <input type="number" id="new-balance" placeholder="الرصيد المبدئي (مثلاً 100)">
-    
-    <button onclick="addNewStudent()">إضافة الطالب للشيت 🚀</button>
-    <p id="admin-msg" style="font-size: 14px; margin-top: 15px;"></p>
+    <h2>➕ إضافة طالب جديد</h2>
+    <label>إيميل الطالب:</label>
+    <input type="email" id="add-email" placeholder="student@example.com">
+    <label>كلمة السر:</label>
+    <input type="password" id="add-password" placeholder="******">
+    <label>الرصيد المبدئي:</label>
+    <input type="number" id="add-balance" placeholder="100">
+    <button class="btn-add" onclick="addNewStudent()">حفظ وإضافة للشيت 🚀</button>
+    <p id="msg-add" class="msg"></p>
+  </div>
+
+  <!-- 2. شحن رصيد طالب -->
+  <div class="card">
+    <h2>💳 شحن رصيد طالب</h2>
+    <label>إيميل الطالب المسجل:</label>
+    <input type="email" id="charge-email" placeholder="student@example.com">
+    <label>المبلغ المراد إضافته (أو خصمه):</label>
+    <input type="number" id="charge-amount" placeholder="50">
+    <button class="btn-charge" onclick="chargeStudent()">تحديث الرصيد ⚡</button>
+    <p id="msg-charge" class="msg"></p>
+  </div>
+
+  <!-- 3. حذف طالب -->
+  <div class="card">
+    <h2>🗑️ حذف طالب من المنصة</h2>
+    <label>إيميل الطالب المراد حذفه:</label>
+    <input type="email" id="delete-email" placeholder="student@example.com">
+    <button class="btn-delete" onclick="deleteStudent()">حذف نهائي من الشيت ⚠️</button>
+    <p id="msg-delete" class="msg"></p>
   </div>
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
 
+    // 1. إضافة طالب
     async function addNewStudent() {
-      let email = document.getElementById('new-email').value.trim();
-      let password = document.getElementById('new-password').value.trim();
-      let balance = document.getElementById('new-balance').value.trim();
-      let msg = document.getElementById('admin-msg');
+      let email = document.getElementById('add-email').value.trim();
+      let password = document.getElementById('add-password').value.trim();
+      let balance = document.getElementById('add-balance').value.trim();
+      let msg = document.getElementById('msg-add');
 
       if (!email || !password || !balance) {
         msg.style.color = "#ff4d4d";
-        msg.innerText = "برجاء ملء جميع الحقول يا فنان!";
+        msg.innerText = "برجاء ملء جميع الحقول!";
         return;
       }
 
       msg.style.color = "#ffc107";
-      msg.innerText = "جاري إضافة الطالب للشيت...";
+      msg.innerText = "جاري الإضافة...";
 
       try {
-        let response = await fetch(API_URL, {
+        let res = await fetch(API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            data: {
-              email: email,
-              password: password,
-              الرصيد: Number(balance),
-              المشاهدات: ""
-            }
+            data: { email: email, password: password, الرصيد: Number(balance), المشاهدات: "" }
           })
         });
 
-        if (response.ok) {
+        if (res.ok) {
           msg.style.color = "#28a745";
-          msg.innerText = "تم إضافة الطالب بنجاح وربط الشيت! 🎉";
-          document.getElementById('new-email').value = "";
-          document.getElementById('new-password').value = "";
-          document.getElementById('new-balance').value = "";
+          msg.innerText = "تمت الإضافة بنجاح! 🎉";
+          document.getElementById('add-email').value = "";
+          document.getElementById('add-password').value = "";
+          document.getElementById('add-balance').value = "";
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "حدث خطأ أثناء الإضافة.";
+        }
+      } catch (err) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "خطأ في الاتصال: " + err.message;
+      }
+    }
+
+    // 2. شحن رصيد الطالب
+    async function chargeStudent() {
+      let email = document.getElementById('charge-email').value.trim().toLowerCase();
+      let amount = Number(document.getElementById('charge-amount').value);
+      let msg = document.getElementById('msg-charge');
+
+      if (!email || isNaN(amount)) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "برجاء إدخال الإيميل والمبلغ بشكل صحيح!";
+        return;
+      }
+
+      msg.style.color = "#ffc107";
+      msg.innerText = "جاري البحث وتحديث الرصيد...";
+
+      try {
+        // بنجيب بيانات الطلاب الأول عشان نعرف رصيده القديم كام
+        let response = await fetch(API_URL);
+        let data = await response.json();
+
+        let student = data.find(s => String(s.email).trim().toLowerCase() === email);
+        if (!student) {
+          msg.style.color = "#ff4d4d";
+          msg.innerText = "لم يتم العثور على طالب بهذا الإيميل!";
+          return;
+        }
+
+        let oldBalance = Number(student.الرصيد || student.balance || 0);
+        let newBalance = oldBalance + amount;
+
+        // تحديث الرصيد في الشيت
+        let updateRes = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: { الرصيد: newBalance }
+          })
+        });
+
+        if (updateRes.ok) {
+          msg.style.color = "#28a745";
+          msg.innerText = `تم شحن الرصيد بنجاح! الرصيد الجديد: ${newBalance} ج.م ⚡`;
+          document.getElementById('charge-email').value = "";
+          document.getElementById('charge-amount').value = "";
+        } else {
+          msg.style.color = "#ff4d4d";
+          msg.innerText = "فشل تحديث الرصيد.";
+        }
+      } catch (err) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "خطأ في الاتصال: " + err.message;
+      }
+    }
+
+    // 3. حذف طالب
+    async function deleteStudent() {
+      let email = document.getElementById('delete-email').value.trim().toLowerCase();
+      let msg = document.getElementById('msg-delete');
+
+      if (!email) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "برجاء كتابة إيميل الطالب المراد حذفه!";
+        return;
+      }
+
+      if (!confirm(`هل أنت متأكد من حذف الطالب ${email} نهائياً؟`)) return;
+
+      msg.style.color = "#ffc107";
+      msg.innerText = "جاري الحذف من الشيت...";
+
+      try {
+        let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
+          method: 'DELETE'
+        });
+
+        if (res.ok) {
+          msg.style.color = "#28a745";
+          msg.innerText = "تم حذف الطالب بنجاح من الشيت! 🗑️";
+          document.getElementById('delete-email').value = "";
+        } else {
+          msg.style.color = "#ff4d4d";
+          msg.innerText = "لم يتم العثور على الطالب أو حدث خطأ بالحذف.";
         }
       } catch (err) {
         msg.style.color = "#ff4d4d";
