@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
 
-    /* زر الثلاث شرط (ثابت ولا يتأثر بالحركة) */
+    /* زر الثلاث شرط (ثابت) */
     .menu-btn { position: fixed; top: 20px; right: 20px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; padding: 10px 15px; font-size: 22px; border-radius: 8px; cursor: pointer; z-index: 2000; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .menu-btn:hover { background: #2a2a2a; }
 
@@ -26,14 +26,17 @@
     
     h2 { color: #ffc107; text-align: center; margin-bottom: 20px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
-    input, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
-    input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
+    input, textarea, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input, textarea { background: #2a2a2a; color: #fff; border: 1px solid #444; font-family: sans-serif; }
+    textarea { resize: vertical; height: 100px; }
     button { font-weight: bold; cursor: pointer; transition: 0.2s; }
     
     .btn-add { background: #28a745; color: #fff; }
     .btn-add:hover { background: #218838; }
     .btn-charge { background: #ffc107; color: #000; }
     .btn-charge:hover { background: #e0a800; }
+    .btn-bulk { background: #9c27b0; color: #fff; }
+    .btn-bulk:hover { background: #7b1fa2; }
     .btn-delete { background: #dc3545; color: #fff; }
     .btn-delete:hover { background: #c82333; }
     .btn-refresh { background: #17a2b8; color: #fff; margin-bottom: 15px; }
@@ -58,7 +61,8 @@
     <h3>⚙️ لوحة تحكم الأدمن</h3>
     <a onclick="switchTab('tab-students', this)" class="active">👥 جميع الطلاب</a>
     <a onclick="switchTab('tab-add', this)">➕ إضافة طالب جديد</a>
-    <a onclick="switchTab('tab-charge', this)">💳 شحن أو خصم رصيد</a>
+    <a onclick="switchTab('tab-charge', this)">💳 شحن أو خصم فردي</a>
+    <a onclick="switchTab('tab-bulk', this)">⚡ شحن جماعي للطلاب</a>
     <a onclick="switchTab('tab-delete', this)">🗑️ حذف طالب</a>
   </div>
 
@@ -99,9 +103,9 @@
       <p id="msg-add" class="msg"></p>
     </div>
 
-    <!-- 3. شحن أو خصم رصيد -->
+    <!-- 3. شحن أو خصم رصيد (فردي) -->
     <div id="tab-charge" class="card">
-      <h2>💳 شحن أو خصم رصيد طالب</h2>
+      <h2>💳 شحن أو خصم رصيد (فردي)</h2>
       <label>إيميل الطالب المسجل:</label>
       <input type="email" id="charge-email" placeholder="student@example.com">
       <label>المبلغ (الموجب للشحن، السالب للخصم مثل -20):</label>
@@ -110,7 +114,18 @@
       <p id="msg-charge" class="msg"></p>
     </div>
 
-    <!-- 4. حذف طالب -->
+    <!-- 4. شحن جماعي للطلاب -->
+    <div id="tab-bulk" class="card">
+      <h2>⚡ شحن جماعي للطلاب</h2>
+      <label>اكتب إيميلات الطلاب (كل إيميل في سطر مستقل، أو افصل بينهم بفاصلة):</label>
+      <textarea id="bulk-emails" placeholder="student1@gmail.com&#10;student2@gmail.com"></textarea>
+      <label>المبلغ المراد إضافته (أو خصمه للجميع):</label>
+      <input type="number" id="bulk-amount" placeholder="50">
+      <button class="btn-bulk" onclick="bulkCharge()">شحن الكل دفعة واحدة 🚀</button>
+      <p id="msg-bulk" class="msg"></p>
+    </div>
+
+    <!-- 5. حذف طالب -->
     <div id="tab-delete" class="card">
       <h2>🗑️ حذف طالب من المنصة</h2>
       <label>إيميل الطالب المراد حذفه:</label>
@@ -142,7 +157,6 @@
       links.forEach(link => link.classList.remove('active'));
       element.classList.add('active');
 
-      // إغلاق الشريط الجانبي فوراً بعد اختيار أي قسم
       document.getElementById('sidebar').classList.remove('active');
     }
 
@@ -270,6 +284,64 @@
       } catch (err) {
         msg.style.color = "#ff4d4d";
         msg.innerText = "خطأ في الاتصال: " + err.message;
+      }
+    }
+
+    // خاصية الشحن الجماعي
+    async function bulkCharge() {
+      let rawText = document.getElementById('bulk-emails').value.trim();
+      let amount = Number(document.getElementById('bulk-amount').value);
+      let msg = document.getElementById('msg-bulk');
+
+      if (!rawText || isNaN(amount)) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "برجاء كتابة الإيميلات والمبلغ بشكل صحيح!";
+        return;
+      }
+
+      // استخراج الإيميلات سواء فواصل أو أسطر جديدة وتنظيف المسافات
+      let emails = rawText.split(/[\n,]+/).map(e => e.trim().toLowerCase()).filter(e => e !== "");
+
+      if (emails.length === 0) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "لم يتم العثور على إيميلات صحيحة!";
+        return;
+      }
+
+      msg.style.color = "#ffc107";
+      msg.innerText = `جاري تحديث الرصيد لـ ${emails.length} طالب... ⏳`;
+
+      try {
+        let response = await fetch(API_URL);
+        let allStudents = await response.json();
+
+        let successCount = 0;
+
+        for (let email of emails) {
+          let student = allStudents.find(s => String(s.email).trim().toLowerCase() === email);
+          if (student) {
+            let oldBalance = Number(student.الرصيد || student.balance || 0);
+            let newBalance = oldBalance + amount;
+
+            let updateRes = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: { الرصيد: newBalance } })
+            });
+
+            if (updateRes.ok) successCount++;
+          }
+        }
+
+        msg.style.color = "#28a745";
+        msg.innerText = `تمت العملية بنجاح! تم شحن رصيد ${successCount} من أصل ${emails.length} طالب 🚀`;
+        document.getElementById('bulk-emails').value = "";
+        document.getElementById('bulk-amount').value = "";
+        loadStudents();
+
+      } catch (err) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "حدث خطأ أثناء الشحن الجماعي: " + err.message;
       }
     }
 
