@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة التعليم</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+    .card { background: #1e1e1e; padding: 20px; border-radius: 12px; max-width: 400px; margin: 20px auto; border: 1px solid #333; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input { background: #2a2a2a; color: #fff; }
+    button { background: #28a745; color: #fff; font-weight: bold; cursor: pointer; }
+    button:hover { background: #218838; }
+    .hidden { display: none; }
+    iframe { width: 100%; height: 210px; border-radius: 8px; border: none; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h2>🎓 المنصة التعليمية</h2>
+
+  <!-- صفحة تسجيل الدخول -->
+  <div id="login-box" class="card">
+    <h3>تسجيل الدخول</h3>
+    <input type="email" id="email" placeholder="البريد الإلكتروني">
+    <input type="password" id="password" placeholder="كلمة السر">
+    <button onclick="login()">دخول</button>
+    <p id="login-msg" style="color: #ff4d4d;"></p>
+  </div>
+
+  <!-- لوحة الطالب -->
+  <div id="dashboard" class="card hidden">
+    <h3>مرحباً بك 👋</h3>
+    <p>رصيدك الحالي: <b id="balance-display" style="color: #28a745;">0</b> ج.م</p>
+    <hr style="border-color: #333;">
+    
+    <h4>كورس الفيزياء - الدرس الأول</h4>
+    <p>سعر المشاهدة: 20 ج.م</p>
+    <button id="watch-btn" onclick="watchVideo('video_1', 20)">مشاهدة الفيديو</button>
+
+    <div id="video-container" class="hidden">
+      <!-- استبدل رابط YouTube هنا برابط درسك -->
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <script>
+    // إعداد الاتصال بـ Supabase
+    const SUPABASE_URL = "https://xfemvxaisbtywxnkfwfw.supabase.co";
+    const SUPABASE_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmZW12eGFpc2J0eXd4bmtmd2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyODIwNjEsImV4cCI6MjEwMDg1ODA2MX0.jjQ4SvFnfYeBmhPZP9YUxA5JDZX_cB4Efyi58GaBK0I";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+
+    // تسجيل الدخول
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('login-msg');
+
+      msg.innerText = "جاري التحقق...";
+
+      const { data, error } = await _supabase
+        .from('students')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        msg.innerText = "البيانات غير صحيحة أو الحساب غير موجود!";
+        return;
+      }
+
+      currentUser = data;
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById('balance-display').innerText = currentUser.balance;
+      
+      // إذا كان الطالب اشترى الفيديو سابقاً
+      if (currentUser.views && currentUser.views['video_1']) {
+        document.getElementById('watch-btn').classList.add('hidden');
+        document.getElementById('video-container').classList.remove('hidden');
+      }
+    }
+
+    // شراء ومشاهدة الفيديو
+    async function watchVideo(videoId, price) {
+      if (currentUser.balance < price) {
+        alert("رصيدك غير كافي لرؤية المحتوى! الرجاء الشحن.");
+        return;
+      }
+
+      const newBalance = currentUser.balance - price;
+      const updatedViews = currentUser.views || {};
+      updatedViews[videoId] = true;
+
+      // تحديث البيانات في Supabase
+      const { error } = await _supabase
+        .from('students')
+        .update({ balance: newBalance, views: updatedViews })
+        .eq('id', currentUser.id);
+
+      if (error) {
+        alert("حدث خطأ أثناء خصم الرصيد!");
+        return;
+      }
+
+      currentUser.balance = newBalance;
+      currentUser.views = updatedViews;
+      alert("تم الخصم بنجاح! مشاهدة ممتعة.");
+      updateUI();
+    }
+  </script>
+</body>
+</html>
