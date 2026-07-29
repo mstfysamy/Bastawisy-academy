@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الأدمن المتكاملة</title>
+  <title>لوحة تحكم الأدمن - المنصة التعليمية</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 30px; }
-    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 450px; margin: 15px auto; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-align: right; }
+    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+    .card { background: #1e1e1e; padding: 20px; border-radius: 12px; max-width: 500px; margin: 15px auto; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-align: right; }
     h2 { text-align: center; color: #ffc107; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
-    input, button { width: 100%; padding: 10px; margin: 5px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input, button { width: 100%; padding: 10px; margin: 5px 0 10px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
     button { font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-add { background: #28a745; color: #fff; }
@@ -18,12 +18,42 @@
     .btn-charge:hover { background: #e0a800; }
     .btn-delete { background: #dc3545; color: #fff; }
     .btn-delete:hover { background: #c82333; }
+    .btn-refresh { background: #17a2b8; color: #fff; margin-bottom: 15px; }
+    .btn-refresh:hover { background: #138496; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
+
+    /* جدول عرض الطلاب */
+    .table-card { max-width: 800px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: center; }
+    th, td { border: 1px solid #444; padding: 10px; }
+    th { background: #222; color: #ffc107; }
+    tr:nth-child(even) { background: #181818; }
   </style>
 </head>
 <body>
 
-  <!-- 1. إضافة طالب جديد -->
+  <!-- 1. جدول عرض جميع الطلاب المسجلين -->
+  <div class="card table-card">
+    <h2>👥 قائمة جميع الطلاب المسجلين</h2>
+    <button class="btn-refresh" onclick="loadStudents()">تحديث القائمة 🔄</button>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>البريد الإلكتروني</th>
+            <th>كلمة السر</th>
+            <th>الرصيد</th>
+            <th>المشاهدات</th>
+          </tr>
+        </thead>
+        <tbody id="students-table-body">
+          <tr><td colspan="4" style="color: #aaa;">جاري تحميل البيانات...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. إضافة طالب جديد -->
   <div class="card">
     <h2>➕ إضافة طالب جديد</h2>
     <label>إيميل الطالب:</label>
@@ -36,7 +66,7 @@
     <p id="msg-add" class="msg"></p>
   </div>
 
-  <!-- 2. شحن رصيد طالب -->
+  <!-- 3. شحن رصيد طالب -->
   <div class="card">
     <h2>💳 شحن رصيد طالب</h2>
     <label>إيميل الطالب المسجل:</label>
@@ -47,7 +77,7 @@
     <p id="msg-charge" class="msg"></p>
   </div>
 
-  <!-- 3. حذف طالب -->
+  <!-- 4. حذف طالب -->
   <div class="card">
     <h2>🗑️ حذف طالب من المنصة</h2>
     <label>إيميل الطالب المراد حذفه:</label>
@@ -58,6 +88,46 @@
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
+
+    // تحميل وعرض الطلاب تلقائياً أول ما الصفحة تفتح
+    window.onload = function() {
+      loadStudents();
+    };
+
+    // جلب وعرض الطلاب في الجدول
+    async function loadStudents() {
+      let tbody = document.getElementById('students-table-body');
+      tbody.innerHTML = `<tr><td colspan="4" style="color: #aaa;">جاري التحديث...</td></tr>`;
+
+      try {
+        let res = await fetch(API_URL);
+        let data = await res.json();
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="color: #ff4d4d;">لا يوجد طلاب مسجلين حالياً!</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = "";
+        data.forEach(student => {
+          let email = student.email || "";
+          let password = student.password || "";
+          let balance = student.الرصيد !== undefined ? student.الرصيد : (student.balance || 0);
+          let watched = student.المشاهدات || student.watched || "لا يوجد";
+
+          let row = `<tr>
+            <td>${email}</td>
+            <td>${password}</td>
+            <td style="color: #28a745; font-weight: bold;">${balance} ج.م</td>
+            <td>${watched}</td>
+          </tr>`;
+          tbody.innerHTML += row;
+        });
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" style="color: #ff4d4d;">خطأ في الاتصال بالشيت!</td></tr>`;
+      }
+    }
 
     // 1. إضافة طالب
     async function addNewStudent() {
@@ -90,6 +160,7 @@
           document.getElementById('add-email').value = "";
           document.getElementById('add-password').value = "";
           document.getElementById('add-balance').value = "";
+          loadStudents(); // تحديث الجدول أوتوماتيك
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "حدث خطأ أثناء الإضافة.";
@@ -113,10 +184,9 @@
       }
 
       msg.style.color = "#ffc107";
-      msg.innerText = "جاري البحث وتحديث الرصيد...";
+      msg.innerText = "جاري تحديث الرصيد...";
 
       try {
-        // بنجيب بيانات الطلاب الأول عشان نعرف رصيده القديم كام
         let response = await fetch(API_URL);
         let data = await response.json();
 
@@ -130,7 +200,6 @@
         let oldBalance = Number(student.الرصيد || student.balance || 0);
         let newBalance = oldBalance + amount;
 
-        // تحديث الرصيد في الشيت
         let updateRes = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -144,6 +213,7 @@
           msg.innerText = `تم شحن الرصيد بنجاح! الرصيد الجديد: ${newBalance} ج.م ⚡`;
           document.getElementById('charge-email').value = "";
           document.getElementById('charge-amount').value = "";
+          loadStudents(); // تحديث الجدول أوتوماتيك
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "فشل تحديث الرصيد.";
@@ -168,7 +238,7 @@
       if (!confirm(`هل أنت متأكد من حذف الطالب ${email} نهائياً؟`)) return;
 
       msg.style.color = "#ffc107";
-      msg.innerText = "جاري الحذف من الشيت...";
+      msg.innerText = "جاري الحذف...";
 
       try {
         let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
@@ -177,8 +247,9 @@
 
         if (res.ok) {
           msg.style.color = "#28a745";
-          msg.innerText = "تم حذف الطالب بنجاح من الشيت! 🗑️";
+          msg.innerText = "تم حذف الطالب بنجاح! 🗑️";
           document.getElementById('delete-email').value = "";
+          loadStudents(); // تحديث الجدول أوتوماتيك
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "لم يتم العثور على الطالب أو حدث خطأ بالحذف.";
