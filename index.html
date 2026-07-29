@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المنصة التعليمية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; padding-bottom: 30px; }
+        .card { background-color: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 12px; }
+        .btn-primary { background-color: #0d9488; border: none; }
+        .btn-primary:hover { background-color: #0f766e; }
+        .badge-balance { background-color: #059669; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="container mt-4">
+        <!-- شاشة تسجيل الدخول -->
+        <div id="auth-box" class="row justify-content-center mt-5">
+            <div class="col-md-5">
+                <div class="card p-4 text-center">
+                    <h3 class="mb-4">🎓 تسجيل دخول الطالب</h3>
+                    <div class="mb-3">
+                        <input type="email" id="email" class="form-control" placeholder="البريد الإلكتروني">
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" id="password" class="form-control" placeholder="كلمة السر">
+                    </div>
+                    <button class="btn btn-primary w-100 fw-bold" onclick="login()">دخول المنصة</button>
+                    <div id="login-error" class="text-danger mt-2 small"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- محتوى المنصة بعد تسجيل الدخول -->
+        <div id="app-box" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+                <h4 id="user-welcome">مرحباً بك</h4>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">خروج</button>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6 offset-md-3">
+                    <div class="card p-3 text-center">
+                        <p class="mb-1 text-muted">رصيدك الحالي:</p>
+                        <div><span class="badge badge-balance p-2 rounded-pill" id="user-balance">0 ج.م</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="mb-3">📹 الحصص المتاحة</h4>
+            <div class="row" id="videos-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1L5CeSr7MzQai4qNUUvy3YLZ7VtIChhr7MkaiEqScsJk';
+
+        const videosList = [
+            { id: "vid1", title: "شرح الدرس الأول - الجبر", price: 20, stage: "الثانوية", url: "https://youtube.com" },
+            { id: "vid2", title: "مراجعة شاملة - الفيزياء", price: 30, stage: "الثانوية", url: "https://youtube.com" }
+        ];
+
+        let currentStudent = null;
+
+        async function fetchStudents() {
+            try {
+                const gvizUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+                
+                const res = await fetch(gvizUrl);
+                const text = await res.text();
+                const json = JSON.parse(text.substring(47, text.length - 2));
+                
+                const rows = json.table.rows;
+                return rows.map(r => ({
+                    email: r.c[0] ? String(r.c[0].v).trim() : '',
+                    password: r.c[1] ? String(r.c[1].v).trim() : '',
+                    balance: r.c[2] ? parseFloat(r.c[2].v) : 0,
+                    views: r.c[3] ? JSON.parse(r.c[3].v || '{}') : {}
+                }));
+            } catch (err) {
+                console.error("خطأ في جلب البيانات من Google Sheet:", err);
+                return [];
+            }
+        }
+
+        async function login() {
+            const inputEmail = document.getElementById('email').value.trim();
+            const inputPass = document.getElementById('password').value.trim();
+            const errDiv = document.getElementById('login-error');
+
+            if(!inputEmail || !inputPass) {
+                errDiv.innerText = "يرجى كتابة البريد وكلمة السر!";
+                return;
+            }
+
+            errDiv.innerText = "جاري التحقق...";
+
+            const students = await fetchStudents();
+            const user = students.find(s => s.email === inputEmail && s.password === inputPass);
+
+            if (user) {
+                currentStudent = user;
+                const localViews = JSON.parse(localStorage.getItem('views_' + user.email) || '{}');
+                currentStudent.views = { ...user.views, ...localViews };
+
+                document.getElementById('auth-box').style.display = 'none';
+                document.getElementById('app-box').style.display = 'block';
+                document.getElementById('user-welcome').innerText = `👤 ${user.email}`;
+                document.getElementById('user-balance').innerText = `${user.balance} ج.م`;
+                renderVideos();
+            } else {
+                errDiv.innerText = "خطأ في البريد أو كلمة السر!";
+            }
+        }
+
+        function logout() {
+            currentStudent = null;
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-error').innerText = '';
+            document.getElementById('auth-box').style.display = 'flex';
+            document.getElementById('app-box').style.display = 'none';
+        }
+
+        function renderVideos() {
+            const container = document.getElementById('videos-container');
+            container.innerHTML = '';
+
+            videosList.forEach(vid => {
+                const count = currentStudent.views[vid.id] || 0;
+                const isMax = count >= 2;
+
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-3';
+                col.innerHTML = `
+                    <div class="card p-3 h-100">
+                        <h5>${vid.title}</h5>
+                        <p class="text-muted mb-1">السعر: ${vid.price} ج.م</p>
+                        <p class="text-warning small mb-3">المشاهدات المستهلكة: ${count}/2</p>
+                        <button class="btn ${isMax ? 'btn-secondary' : 'btn-primary'} w-100 mt-auto" 
+                            ${isMax ? 'disabled' : ''} 
+                            onclick="watch('${vid.id}', ${vid.price}, '${vid.url}', ${count})">
+                            ${isMax ? '🔒 تم استنفاد المرتين' : '▶️ فتح الحصة'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        function watch(vidId, price, url, currentViews) {
+            if (currentViews >= 2) return;
+
+            if (currentViews === 0) {
+                if (currentStudent.balance < price) {
+                    alert("❌ رصيدك لا يكفي لشراء هذه الحصة!");
+                    return;
+                }
+                currentStudent.balance -= price;
+                document.getElementById('user-balance').innerText = `${currentStudent.balance} ج.م`;
+            }
+
+            currentStudent.views[vidId] = currentViews + 1;
+            localStorage.setItem('views_' + currentStudent.email, JSON.stringify(currentStudent.views));
+
+            renderVideos();
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
