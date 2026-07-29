@@ -3,15 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الأدمن - المنصة التعليمية</title>
+  <title>لوحة التحكم الاحترافية - الأدمن</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
-    .card { background: #1e1e1e; padding: 20px; border-radius: 12px; max-width: 500px; margin: 15px auto; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-align: right; }
-    h2 { text-align: center; color: #ffc107; }
+    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; display: flex; }
+
+    /* الشريط الجانبي (Sidebar) */
+    .sidebar { width: 260px; background: #181818; height: 100vh; position: fixed; right: -260px; top: 0; transition: 0.3s; border-left: 1px solid #333; z-index: 1000; padding-top: 60px; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+    .sidebar.active { right: 0; }
+    .sidebar h3 { color: #ffc107; text-align: center; margin-bottom: 30px; font-size: 18px; }
+    .sidebar a { display: block; padding: 15px 25px; color: #ccc; text-decoration: none; font-size: 15px; transition: 0.2s; border-bottom: 1px solid #222; cursor: pointer; }
+    .sidebar a:hover, .sidebar a.active { background: #252525; color: #ffc107; border-right: 4px solid #ffc107; }
+
+    /* زر الثلاث شرط (Hamburger Menu) */
+    .menu-btn { position: fixed; top: 20px; right: 20px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; padding: 10px 15px; font-size: 20px; border-radius: 8px; cursor: pointer; z-index: 1001; transition: 0.2s; }
+    .menu-btn:hover { background: #2a2a2a; }
+
+    /* المحتوى الرئيسي */
+    .main-content { flex: 1; padding: 30px; margin-right: 0; transition: 0.3s; max-width: 900px; margin: 0 auto; margin-top: 40px; }
+    
+    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 20px; display: none; }
+    .card.active-tab { display: block; }
+    
+    h2 { color: #ffc107; text-align: center; margin-bottom: 20px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
-    input, button { width: 100%; padding: 10px; margin: 5px 0 10px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
     button { font-weight: bold; cursor: pointer; transition: 0.2s; }
+    
     .btn-add { background: #28a745; color: #fff; }
     .btn-add:hover { background: #218838; }
     .btn-charge { background: #ffc107; color: #000; }
@@ -20,10 +38,10 @@
     .btn-delete:hover { background: #c82333; }
     .btn-refresh { background: #17a2b8; color: #fff; margin-bottom: 15px; }
     .btn-refresh:hover { background: #138496; }
+    
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
 
     /* جدول عرض الطلاب */
-    .table-card { max-width: 800px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: center; }
     th, td { border: 1px solid #444; padding: 10px; }
     th { background: #222; color: #ffc107; }
@@ -32,67 +50,107 @@
 </head>
 <body>
 
-  <!-- 1. جدول عرض جميع الطلاب المسجلين -->
-  <div class="card table-card">
-    <h2>👥 قائمة جميع الطلاب المسجلين</h2>
-    <button class="btn-refresh" onclick="loadStudents()">تحديث القائمة 🔄</button>
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>البريد الإلكتروني</th>
-            <th>كلمة السر</th>
-            <th>الرصيد</th>
-            <th>المشاهدات</th>
-          </tr>
-        </thead>
-        <tbody id="students-table-body">
-          <tr><td colspan="4" style="color: #aaa;">جاري تحميل البيانات...</td></tr>
-        </tbody>
-      </table>
+  <!-- زر القائمة (الثلاث شرط) -->
+  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+
+  <!-- الشريط الجانبي -->
+  <div class="sidebar" id="sidebar">
+    <h3>⚙️ لوحة تحكم الأدمن</h3>
+    <a onclick="switchTab('tab-students', this)" class="active">👥 جميع الطلاب</a>
+    <a onclick="switchTab('tab-add', this)">➕ إضافة طالب جديد</a>
+    <a onclick="switchTab('tab-charge', this)">💳 شحن أو خصم رصيد</a>
+    <a onclick="switchTab('tab-delete', this)">🗑️ حذف طالب</a>
+  </div>
+
+  <!-- المحتوى الرئيسي -->
+  <div class="main-content">
+
+    <!-- 1. قائمة جميع الطلاب (الصفحة الرئيسية للوحة الأدمن) -->
+    <div id="tab-students" class="card active-tab">
+      <h2>👥 قائمة جميع الطلاب المسجلين</h2>
+      <button class="btn-refresh" onclick="loadStudents()">تحديث القائمة 🔄</button>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>البريد الإلكتروني</th>
+              <th>كلمة السر</th>
+              <th>الرصيد</th>
+              <th>المشاهدات</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <tr><td colspan="4" style="color: #aaa;">جاري تحميل البيانات...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <!-- 2. إضافة طالب جديد -->
-  <div class="card">
-    <h2>➕ إضافة طالب جديد</h2>
-    <label>إيميل الطالب:</label>
-    <input type="email" id="add-email" placeholder="student@example.com">
-    <label>كلمة السر:</label>
-    <input type="password" id="add-password" placeholder="******">
-    <label>الرصيد المبدئي:</label>
-    <input type="number" id="add-balance" placeholder="100">
-    <button class="btn-add" onclick="addNewStudent()">حفظ وإضافة للشيت 🚀</button>
-    <p id="msg-add" class="msg"></p>
-  </div>
+    <!-- 2. إضافة طالب جديد -->
+    <div id="tab-add" class="card">
+      <h2>➕ إضافة طالب جديد للمنصة</h2>
+      <label>إيميل الطالب:</label>
+      <input type="email" id="add-email" placeholder="student@example.com">
+      <label>كلمة السر:</label>
+      <input type="password" id="add-password" placeholder="******">
+      <label>الرصيد المبدئي:</label>
+      <input type="number" id="add-balance" placeholder="100">
+      <button class="btn-add" onclick="addNewStudent()">حفظ وإضافة للشيت 🚀</button>
+      <p id="msg-add" class="msg"></p>
+    </div>
 
-  <!-- 3. شحن رصيد طالب -->
-  <div class="card">
-    <h2>💳 شحن رصيد طالب</h2>
-    <label>إيميل الطالب المسجل:</label>
-    <input type="email" id="charge-email" placeholder="student@example.com">
-    <label>المبلغ المراد إضافته (أو خصمه):</label>
-    <input type="number" id="charge-amount" placeholder="50">
-    <button class="btn-charge" onclick="chargeStudent()">تحديث الرصيد ⚡</button>
-    <p id="msg-charge" class="msg"></p>
-  </div>
+    <!-- 3. شحن أو خصم رصيد -->
+    <div id="tab-charge" class="card">
+      <h2>💳 شحن أو خصم رصيد طالب</h2>
+      <label>إيميل الطالب المسجل:</label>
+      <input type="email" id="charge-email" placeholder="student@example.com">
+      <label>المبلغ (اكتب الرقم بالموجب للشحن، أو بالسالب للخصم مثل -20):</label>
+      <input type="number" id="charge-amount" placeholder="50 أو -20">
+      <button class="btn-charge" onclick="chargeStudent()">تفيذ العملية ⚡</button>
+      <p id="msg-charge" class="msg"></p>
+    </div>
 
-  <!-- 4. حذف طالب -->
-  <div class="card">
-    <h2>🗑️ حذف طالب من المنصة</h2>
-    <label>إيميل الطالب المراد حذفه:</label>
-    <input type="email" id="delete-email" placeholder="student@example.com">
-    <button class="btn-delete" onclick="deleteStudent()">حذف نهائي من الشيت ⚠️</button>
-    <p id="msg-delete" class="msg"></p>
+    <!-- 4. حذف طالب -->
+    <div id="tab-delete" class="card">
+      <h2>🗑️ حذف طالب من المنصة</h2>
+      <label>إيميل الطالب المراد حذفه:</label>
+      <input type="email" id="delete-email" placeholder="student@example.com">
+      <button class="btn-delete" onclick="deleteStudent()">حذف نهائي من الشيت ⚠️</button>
+      <p id="msg-delete" class="msg"></p>
+    </div>
+
   </div>
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
 
-    // تحميل وعرض الطلاب تلقائياً أول ما الصفحة تفتح
+    // أول ما الصفحة تفتح، حمل بيانات الطلاب
     window.onload = function() {
       loadStudents();
     };
+
+    // تحكم في إظهار وإخفاء القائمة الجانبية (Sidebar)
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // التنقل بين الأقسام بسلاسة
+    function switchTab(tabId, element) {
+      // إخفاء كل الكروت
+      let cards = document.querySelectorAll('.card');
+      cards.forEach(card => card.classList.remove('active-tab'));
+
+      // إظهار الكرد المطلوب
+      document.getElementById(tabId).classList.add('active-tab');
+
+      // تعديل الأختيار النشط في القائمة
+      let links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      element.classList.add('active');
+
+      // قفل القائمة الجانبية تلقائياً على الموبايل بعد الضغط
+      document.getElementById('sidebar').classList.remove('active');
+    }
 
     // جلب وعرض الطلاب في الجدول
     async function loadStudents() {
@@ -160,7 +218,7 @@
           document.getElementById('add-email').value = "";
           document.getElementById('add-password').value = "";
           document.getElementById('add-balance').value = "";
-          loadStudents(); // تحديث الجدول أوتوماتيك
+          loadStudents();
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "حدث خطأ أثناء الإضافة.";
@@ -171,7 +229,7 @@
       }
     }
 
-    // 2. شحن رصيد الطالب
+    // 2. شحن أو خصم رصيد الطالب
     async function chargeStudent() {
       let email = document.getElementById('charge-email').value.trim().toLowerCase();
       let amount = Number(document.getElementById('charge-amount').value);
@@ -184,7 +242,7 @@
       }
 
       msg.style.color = "#ffc107";
-      msg.innerText = "جاري تحديث الرصيد...";
+      msg.innerText = "جاري تنفيذ العملية...";
 
       try {
         let response = await fetch(API_URL);
@@ -210,10 +268,10 @@
 
         if (updateRes.ok) {
           msg.style.color = "#28a745";
-          msg.innerText = `تم شحن الرصيد بنجاح! الرصيد الجديد: ${newBalance} ج.م ⚡`;
+          msg.innerText = `تم تحديث الرصيد بنجاح! الرصيد الجديد: ${newBalance} ج.م ⚡`;
           document.getElementById('charge-email').value = "";
           document.getElementById('charge-amount').value = "";
-          loadStudents(); // تحديث الجدول أوتوماتيك
+          loadStudents();
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "فشل تحديث الرصيد.";
@@ -249,7 +307,7 @@
           msg.style.color = "#28a745";
           msg.innerText = "تم حذف الطالب بنجاح! 🗑️";
           document.getElementById('delete-email').value = "";
-          loadStudents(); // تحديث الجدول أوتوماتيك
+          loadStudents();
         } else {
           msg.style.color = "#ff4d4d";
           msg.innerText = "لم يتم العثور على الطالب أو حدث خطأ بالحذف.";
