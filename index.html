@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المنصة التعليمية - Google Sheets</title>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+    .card { background: #1e1e1e; padding: 20px; border-radius: 12px; max-width: 400px; margin: 20px auto; border: 1px solid #333; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input { background: #2a2a2a; color: #fff; }
+    button { background: #28a745; color: #fff; font-weight: bold; cursor: pointer; }
+    button:hover { background: #218838; }
+    .hidden { display: none; }
+    iframe { width: 100%; height: 210px; border-radius: 8px; border: none; margin-top: 10px; }
+    .logout-btn { background: #dc3545; }
+    .logout-btn:hover { background: #c82333; }
+  </style>
+</head>
+<body>
+
+  <h2>🎓 المنصة التعليمية</h2>
+
+  <div id="login-box" class="card">
+    <h3>تسجيل الدخول</h3>
+    <input type="text" id="login-username" placeholder="اسم المستخدم">
+    <input type="password" id="login-password" placeholder="كلمة السر">
+    <button onclick="login()">دخول</button>
+    <p id="login-msg" style="color: #ff4d4d; font-size: 13px; margin-top: 10px;"></p>
+  </div>
+
+  <div id="dashboard" class="card hidden">
+    <h3>مرحباً بك 👋</h3>
+    <p id="student-name-display" style="color: #aaa; font-size: 13px;"></p>
+    <p>رصيدك الحالي: <b id="balance-display" style="color: #28a745;">0</b> ج.م</p>
+    <hr style="border-color: #333;">
+    
+    <h4>كورس الفيزياء - الدرس الأول</h4>
+    <p>سعر المشاهدة: 20 ج.م</p>
+    <button id="watch-btn" onclick="watchVideo('video_1', 20)">مشاهدة الفيديو</button>
+
+    <div id="video-container" class="hidden">
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+    </div>
+
+    <button class="logout-btn" onclick="logout()" style="margin-top: 15px;">تسجيل خروج</button>
+  </div>
+
+  <script>
+    // رابط الـ API الخاص بـ SheetDB المتصل بملف جوجل شيت الخاص بك
+    const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
+
+    let currentStudent = null;
+
+    async function login() {
+      let usernameInput = document.getElementById('login-username').value.trim();
+      let passwordInput = document.getElementById('login-password').value.trim();
+      let msg = document.getElementById('login-msg');
+      msg.style.color = "#ff4d4d";
+      msg.innerText = "جاري التحقق من البيانات...";
+
+      try {
+        let response = await fetch(API_URL);
+        let data = await response.json();
+
+        if (!data || data.length === 0) {
+          msg.innerText = "الشيت فارغ أو لا يمكن قراءته!";
+          return;
+        }
+
+        let found = data.find(s => 
+          String(s.username).trim() === usernameInput && 
+          String(s.password).trim() === passwordInput
+        );
+
+        if (!found) {
+          msg.innerText = "اسم المستخدم أو كلمة المرور غير صحيحة!";
+        } else {
+          currentStudent = found;
+          currentStudent.balance = Number(currentStudent.balance || 0);
+          
+          msg.innerText = "";
+          document.getElementById('login-box').classList.add('hidden');
+          document.getElementById('dashboard').classList.remove('hidden');
+          updateUI();
+        }
+
+      } catch (err) {
+        msg.innerText = "حدث خطأ في الاتصال بالشيت: " + err.message;
+      }
+    }
+
+    function updateUI() {
+      if (!currentStudent) return;
+      document.getElementById('student-name-display').innerText = "الحساب: " + currentStudent.username;
+      document.getElementById('balance-display').innerText = currentStudent.balance;
+      
+      // التحقق مما إذا كان الطالب قد شاهد الفيديو من قبل (مسجل في عمود watched بالشيت)
+      if (currentStudent.watched && currentStudent.watched.includes('video_1')) {
+        document.getElementById('watch-btn').classList.add('hidden');
+        document.getElementById('video-container').classList.remove('hidden');
+      } else {
+        document.getElementById('watch-btn').classList.remove('hidden');
+        document.getElementById('video-container').classList.add('hidden');
+      }
+    }
+
+    async function watchVideo(videoId, price) {
+      if (currentStudent.balance < price) {
+        alert("رصيدك غير كافي! تواصل مع الأدمن للشحن.");
+        return;
+      }
+
+      let newBalance = currentStudent.balance - price;
+      
+      try {
+        // تحديث الرصيد وحالة المشاهدة في Google Sheet مباشرة أونلاين
+        let response = await fetch(`${API_URL}/username/${currentStudent.username}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              balance: newBalance,
+              watched: videoId
+            }
+          })
+        });
+
+        if (!response.ok) {
+          alert("خطأ أثناء تحديث الرصيد في الشيت!");
+          return;
+        }
+
+        currentStudent.balance = newBalance;
+        currentStudent.watched = videoId;
+        alert("تمت عملية الشراء بنجاح! ✅");
+        updateUI();
+
+      } catch (err) {
+        alert("حدث خطأ في الاتصال: " + err.message);
+      }
+    }
+
+    function logout() {
+      currentStudent = null;
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('login-box').classList.remove('hidden');
+      document.getElementById('login-username').value = "";
+      document.getElementById('login-password').value = "";
+      document.getElementById('login-msg').innerText = "";
+    }
+  </script>
+</body>
+</html>
