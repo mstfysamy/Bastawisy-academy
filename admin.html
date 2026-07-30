@@ -37,8 +37,8 @@
 
   <div class="sidebar" id="sidebar">
     <h3>⚙️ لوحة التحكم</h3>
-    <a onclick="switchTab('tab-students', this)" class="active">👥 جميع الطلاب والشحن</a>
-    <a onclick="switchTab('tab-add-student', this)">➕ إضافة طالب وصفه</a>
+    <a onclick="switchTab('tab-students', this)" class="active">👥 جدول الطلاب والبيانات</a>
+    <a onclick="switchTab('tab-add-student', this)">➕ إضافة طالب جديد</a>
     <a onclick="switchTab('tab-bulk', this)">⚡ شحن جماعي للكل</a>
     <a onclick="switchTab('tab-add-video', this)">🎥 إضافة فيديو لصف معين</a>
     <a onclick="switchTab('tab-manage-videos', this)">📋 إدارة وحذف الفيديوهات</a>
@@ -46,25 +46,26 @@
 
   <div class="main-content">
     
-    <!-- 1. عرض الطلاب -->
+    <!-- 1. عرض الطلاب (تمت إضافة الصف وكلمة السر) -->
     <div id="tab-students" class="card active-tab">
-      <h2>👥 قائمة الطلاب والصفوف الدراسية</h2>
+      <h2>👥 قائمة الطلاب والبيانات الكاملة</h2>
       <table>
         <thead>
           <tr>
             <th>الإيميل</th>
+            <th>كلمة السر</th>
             <th>الصف الدراسي</th>
             <th>الرصيد</th>
             <th>إجراءات</th>
           </tr>
         </thead>
         <tbody id="students-table-body">
-          <tr><td colspan="4">جاري التحميل...</td></tr>
+          <tr><td colspan="5">جاري التحميل...</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 2. إضافة طالب جديد مع الصف -->
+    <!-- 2. إضافة طالب جديد -->
     <div id="tab-add-student" class="card">
       <h2>➕ إضافة طالب وتحديد سنته</h2>
       <label>الإيميل:</label>
@@ -153,11 +154,11 @@
       el.classList.add('active');
       document.getElementById('sidebar').classList.remove('active');
       
-      // تحديث الجداول عند فتح التبويب
       if(tabId === 'tab-students') loadStudents();
       if(tabId === 'tab-manage-videos') loadVideos();
     }
 
+    // عرض الطلاب مع الباسورد والصف الدراسي
     async function loadStudents() {
       try {
         let res = await fetch(API_URL);
@@ -168,16 +169,18 @@
         let validStudents = data.filter(s => s.email);
 
         if(validStudents.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4">لا يوجد طلاب مسجلين حالياً.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5">لا يوجد طلاب مسجلين حالياً.</td></tr>`;
           return;
         }
 
         validStudents.forEach(s => {
           let balance = s.الرصيد !== undefined ? s.الرصيد : 0;
           let grade = s.grade || 'غير محدد';
+          let password = s.password || '';
           tbody.innerHTML += `
             <tr>
               <td>${s.email}</td>
+              <td><span style="color: #00bcd4;">${password}</span></td>
               <td><span style="color: #ffc107; font-weight: bold;">${grade}</span></td>
               <td>${balance} ج.م</td>
               <td>
@@ -188,11 +191,10 @@
           `;
         });
       } catch(err) {
-        document.getElementById('students-table-body').innerHTML = `<tr><td colspan="4" style="color:red;">خطأ في الاتصال!</td></tr>`;
+        document.getElementById('students-table-body').innerHTML = `<tr><td colspan="5" style="color:red;">خطأ في الاتصال!</td></tr>`;
       }
     }
 
-    // تحميل الفيديوهات في جدول الأدمن
     async function loadVideos() {
       try {
         let res = await fetch(API_URL);
@@ -200,7 +202,6 @@
         let tbody = document.getElementById('videos-table-body');
         tbody.innerHTML = "";
 
-        // فلترة العناصر التي تحتوي على فيديو
         let videos = data.filter(v => v.videoTitle);
 
         if(videos.length === 0) {
@@ -209,7 +210,6 @@
         }
 
         videos.forEach(v => {
-          // استخدام videoTitle كمعرف فريد أو مؤشر للحذف في SheetDB
           tbody.innerHTML += `
             <tr>
               <td><span style="color: #00bcd4;">${v.videoGrade || 'عام'}</span></td>
@@ -226,24 +226,11 @@
       }
     }
 
-    // حذف فيديو بناءً على عنوانه
     async function deleteVideo(encodedTitle) {
-      if(!confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً من المنصة؟")) return;
-
-      try {
-        let res = await fetch(`${API_URL}/videoTitle/${encodedTitle}`, {
-          method: 'DELETE'
-        });
-
-        if(res.ok) {
-          alert("تم حذف الفيديو بنجاح! 🗑️");
-          loadVideos();
-        } else {
-          alert("فشل في حذف الفيديو.");
-        }
-      } catch(err) {
-        alert("خطأ في الاتصال بالخادم.");
-      }
+      if(!confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً؟")) return;
+      let res = await fetch(`${API_URL}/videoTitle/${encodedTitle}`, { method: 'DELETE' });
+      if(res.ok) { alert("تم الحذف بنجاح!"); loadVideos(); }
+      else { alert("فشل الحذف."); }
     }
 
     async function chargeIndividual(email, currentBalance) {
@@ -282,7 +269,7 @@
       });
 
       if(res.ok) {
-        msg.style.color = "#28a745"; msg.innerText = "تمت إضافة الطالب وصفه بنجاح! 🚀";
+        msg.style.color = "#28a745"; msg.innerText = "تمت إضافة الطالب بنجاح! 🚀";
         document.getElementById('add-email').value = "";
         document.getElementById('add-password').value = "";
         document.getElementById('add-balance').value = "";
