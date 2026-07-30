@@ -3,177 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الكورسات التعليمية</title>
+  <title>منصة الكورسات</title>
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
-
-    /* زر الدعم الفني الثابت فوق على الشمال */
-    .support-btn { position: fixed; top: 20px; left: 20px; background: #25d366; color: #fff; border: none; padding: 10px 15px; font-size: 16px; border-radius: 50px; cursor: pointer; z-index: 2000; display: flex; align-items: center; gap: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-decoration: none; transition: 0.2s; }
-    .support-btn:hover { background: #20ba5a; transform: scale(1.05); }
-
-    /* حاوية المحتوى */
+    .support-btn { position: fixed; top: 20px; left: 20px; background: #25d366; color: #fff; padding: 10px 15px; border-radius: 50px; text-decoration: none; font-weight: bold; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .container { max-width: 450px; margin: 80px auto 30px auto; padding: 20px; }
-
-    /* شاشة تسجيل الدخول */
-    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.6); margin-bottom: 20px; text-align: right; }
-    h2 { color: #ffc107; text-align: center; margin-bottom: 20px; }
-    label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
+    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; text-align: right; }
+    h2 { color: #ffc107; text-align: center; }
     input, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-    button { font-weight: bold; cursor: pointer; transition: 0.2s; }
-    
-    .btn-main { background: #ffc107; color: #000; }
-    .btn-main:hover { background: #e0a800; }
-    .msg { font-size: 13px; text-align: center; margin-top: 5px; }
-
-    /* لوحة الطالب بعد التسجيل */
+    .btn-main { background: #ffc107; color: #000; font-weight: bold; cursor: pointer; }
     #dashboard { display: none; text-align: center; }
-    .balance-box { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; }
+    .balance-box { background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
     .balance-amount { color: #28a745; font-size: 22px; font-weight: bold; }
-    
     .course-card { background: #252525; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #333; text-align: right; }
-    .course-card h3 { color: #ffc107; margin: 0 0 10px 0; font-size: 16px; }
-    .btn-watch { background: #28a745; color: #fff; width: auto; padding: 10px 20px; display: inline-block; margin-top: 10px; text-decoration: none; border-radius: 6px; }
-    .btn-watch:hover { background: #218838; }
+    .course-card h3 { color: #ffc107; margin: 0 0 5px 0; font-size: 16px; }
+    .btn-watch { background: #28a745; color: #fff; padding: 8px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; }
   </style>
 </head>
 <body>
 
-  <!-- زر الدعم الفني (سماعة واتساب فوق على الشمال) -->
-  <a href="https://wa.me/201234567890?text=مرحباً، أريد شحن رصيد لحسابي في المنصة" target="_blank" class="support-btn">
-    🎧 الدعم الفني
-  </a>
+  <a href="https://wa.me/201205206388?text=مرحباً، أريد شحن رصيد" target="_blank" class="support-btn">🎧 الدعم الفني</a>
 
   <div class="container">
-
-    <!-- 1. نموذج تسجيل الدخول -->
+    <!-- تسجيل الدخول -->
     <div id="login-card" class="card">
-      <h2>🔐 تسجيل دخول الطالب</h2>
-      <label>البريد الإلكتروني:</label>
-      <input type="email" id="login-email" placeholder="student@example.com">
-      <label>كلمة المرور:</label>
-      <input type="password" id="login-password" placeholder="******">
-      <button class="btn-main" onclick="loginStudent()">دخول للمنصة 🚀</button>
-      <p id="login-msg" class="msg"></p>
+      <h2>🔐 تسجيل الدخول</h2>
+      <label>الإيميل:</label><input type="email" id="login-email">
+      <label>كلمة المرور:</label><input type="password" id="login-password">
+      <button class="btn-main" onclick="loginStudent()">دخول</button>
+      <p id="login-msg" style="color:red; font-size:12px; text-align:center;"></p>
     </div>
 
-    <!-- 2. لوحة تحكم الطالب (تظهر بعد تسجيل الدخول) -->
+    <!-- لوحة الطالب -->
     <div id="dashboard" class="card">
-      <h2>مرحباً بك يا بطل! 👋</h2>
+      <h2>مرحباً بك! 👋</h2>
       <div class="balance-box">
-        <p style="margin: 0; color: #aaa; font-size: 14px;">رصيدك الحالي:</p>
+        <p style="margin:0; color:#aaa;">رصيدك الحالي:</p>
         <p class="balance-amount" id="user-balance">0 ج.م</p>
       </div>
-
-      <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
-
-      <h3 style="color: #fff; font-size: 15px; text-align: right;">📚 الكورسات المتاحة:</h3>
-      
-      <!-- مثال لكورس -->
-      <div class="course-card">
-        <h3>كورس البرمجة الشامل - الدرس الأول</h3>
-        <p style="font-size: 12px; color: (#aaa); margin: 5px 0;" id="watch-count-info">المشاهدات المتبقية: 2 / 2</p>
-        <button class="btn-watch" onclick="watchVideo('الدرس الأول')">مشاهدة الفيديو 🎬</button>
-      </div>
+      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 الفيديوهات المتاحة من الأدمن:</h3>
+      <div id="videos-list">جاري تحميل الفيديوهات...</div>
     </div>
-
   </div>
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
     let currentStudent = null;
 
-    // تسجيل الدخول
     async function loginStudent() {
       let email = document.getElementById('login-email').value.trim().toLowerCase();
       let password = document.getElementById('login-password').value.trim();
-      let msg = document.getElementById('login-msg');
+      
+      let res = await fetch(API_URL);
+      let data = await res.json();
+      let student = data.find(s => String(s.email).trim().toLowerCase() === email && String(s.password).trim() === password);
 
-      if (!email || !password) {
-        msg.style.color = "#ff4d4d";
-        msg.innerText = "برجاء إدخال الإيميل وكلمة المرور!";
+      if(!student) {
+        document.getElementById('login-msg').innerText = "خطأ في الإيميل أو الباسورد";
         return;
       }
 
-      msg.style.color = "#ffc107";
-      msg.innerText = "جاري التحقق...";
-
-      try {
-        let res = await fetch(API_URL);
-        let data = await res.json();
-
-        let student = data.find(s => String(s.email).trim().toLowerCase() === email && String(s.password).trim() === password);
-
-        if (!student) {
-          msg.style.color = "#ff4d4d";
-          msg.innerText = "الإيميل أو كلمة المرور غير صحيحة!";
-          return;
-        }
-
-        currentStudent = student;
-        
-        // إخفاء تسجيل الدخول وإظهار الداشبورد
-        document.getElementById('login-card').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-
-        // تحديث البيانات المعروضة
-        updateDashboardUI();
-
-      } catch (err) {
-        msg.style.color = "#ff4d4d";
-        msg.innerText = "خطأ في الاتصال بالخادم!";
-      }
+      currentStudent = student;
+      document.getElementById('login-card').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      updateUI();
+      loadAvailableVideos(data);
     }
 
-    // تحديث الواجهة بالبيانات
-    function updateDashboardUI() {
-      if (!currentStudent) return;
-      let balance = currentStudent.الرصيد !== undefined ? currentStudent.الرصيد : (currentStudent.balance || 0);
-      document.getElementById('user-balance').innerText = balance + " ج.م";
-
-      // حساب عدد المشاهدات المسجلة لهذا الطالب (لو مخزنة كنص)
-      let watchedText = currentStudent.المشاهدات || "";
-      let watchCount = (watchedText.match(/الدرس الأول/g) || []).length;
-      let remaining = 2 - watchCount;
-
-      if (remaining < 0) remaining = 0;
-      document.getElementById('watch-count-info').innerText = `المشاهدات المتبقية: ${remaining} / 2`;
+    function updateUI() {
+      let bal = currentStudent.الرصيد !== undefined ? Number(currentStudent.الرصيد) : 0;
+      document.getElementById('user-balance').innerText = bal + " ج.م";
     }
 
-    // وظيفة مشاهدة الفيديو والتحقق من الحد الأقصى (مرتين)
-    async function watchVideo(videoName) {
-      if (!currentStudent) return;
+    // جلب الفيديوهات اللي الأدمن ضافها من الشيت
+    async function loadAvailableVideos(allData) {
+      let listDiv = document.getElementById('videos-list');
+      listDiv.innerHTML = "";
 
-      let watchedText = currentStudent.المشاهدات || "";
-      let watchCount = (watchedText.match(new RegExp(videoName, "g")) || []).length;
+      // تصفية الصفوف التي تحتوي على فيديوهات أضافها الأدمن
+      let videos = allData.filter(item => item.videoTitle);
 
-      if (watchCount >= 2) {
-        alert("عفواً، لقد استنفدت الحد الأقصى لمشاهدة هذا الفيديو (مرتين). تواصل مع الدعم لإعادة الشحن!");
+      if(videos.length === 0) {
+        listDiv.innerHTML = "<p style='color:#aaa; font-size:13px;'>لا توجد فيديوهات مضافة حالياً.</p>";
         return;
       }
 
-      // إضافة مشاهدة جديدة للسجل
-      let newWatchedText = watchedText ? watchedText + ", " + videoName : videoName;
+      videos.forEach(v => {
+        listDiv.innerHTML += `
+          <div class="course-card">
+            <h3>${v.videoTitle}</h3>
+            <p style="font-size:13px; color:#ffc107; margin:3px 0;">السعر: ${v.videoPrice} ج.م</p>
+            <button class="btn-watch" onclick="buyAndWatch('${v.videoTitle}', ${v.videoPrice}, '${v.videoUrl}')">شاهد وافتح الفيديو 🎬</button>
+          </div>
+        `;
+      });
+    }
 
-      try {
-        // تحديث الشيت
-        let updateRes = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: { المشاهدات: newWatchedText } })
-        });
+    // خصم السعر وفتح الفيديو
+    async function buyAndWatch(title, price, url) {
+      let currentBal = Number(currentStudent.الرصيد || 0);
 
-        if (updateRes.ok) {
-          currentStudent.المشاهدات = newWatchedText;
-          updateDashboardUI();
-          
-          // هنا بيفتح له رابط الفيديو الحقيقي (تقدر تحط رابط يوتيوب أو فيديو درايف هنا)
-          window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank");
-        } else {
-          alert("حدث خطأ أثناء تسجيل المشاهدة.");
-        }
-      } catch (err) {
-        alert("خطأ في الاتصال: " + err.message);
+      if(currentBal < price) {
+        alert("رصيدك غير كافٍ لفتح هذا الفيديو! تواصل مع الدعم للشحن.");
+        return;
+      }
+
+      if(!confirm(`هل تريد خصم ${price} ج.م ومشاهدة الدرس؟`)) return;
+
+      let newBal = currentBal - price;
+
+      // تحديث الرصيد الجديد للطالب في الشيت
+      let res = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { الرصيد: newBal } })
+      });
+
+      if(res.ok) {
+        currentStudent.الرصيد = newBal;
+        updateUI();
+        window.open(url, "_blank");
+      } else {
+        alert("حدث خطأ أثناء خصم الرصيد.");
       }
     }
   </script>
