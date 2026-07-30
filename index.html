@@ -6,7 +6,7 @@
   <title>منصة الطلاب التعليمية</title>
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
-    .container { max-width: 600px; margin: 30px auto; padding: 15px; }
+    .container { max-width: 650px; margin: 30px auto; padding: 15px; }
     .card { background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
     h2 { color: #ffc107; text-align: center; margin-bottom: 20px; font-size: 18px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
@@ -16,10 +16,13 @@
     button:hover { background: #e0a800; }
     .hidden { display: none; }
     .student-header { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; font-size: 14px; flex-wrap: wrap; gap: 5px; }
-    .video-card { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .video-info h4 { margin: 0 0 5px 0; color: #ffc107; font-size: 15px; }
-    .video-info p { margin: 0; color: #aaa; font-size: 12px; }
-    .btn-watch { background: #28a745; color: #fff; padding: 8px 15px; border-radius: 6px; width: auto; font-size: 13px; }
+    .video-card { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+    .video-info h4 { margin: 0 0 5px 0; color: #ffc107; font-size: 16px; }
+    .video-info p { margin: 0 0 5px 0; color: #aaa; font-size: 13px; }
+    .btn-unlock { background: #28a745; color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; }
+    .btn-play-action { background: #00bcd4; color: #000; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; font-weight: bold; }
+    .video-container { margin-top: 10px; position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
+    .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
     .support-btn { display: block; background: #25d366; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
   </style>
@@ -63,7 +66,7 @@
 
       <h2>📚 الفيديوهات المتاحة لصفك الدراسي</h2>
       <div id="videos-list-container">
-        <!-- سيتم تحميل فيديوهات الصف هنا ديناميكياً -->
+        <!-- سيتم تحميل الفيديوهات هنا ديناميكياً -->
       </div>
       
       <a class="support-btn" href="https://wa.me/201205206388" target="_blank">💬 واجهتك مشكلة؟ كلم الدعم (واتساب)</a>
@@ -104,7 +107,6 @@
         let db = await fetchData();
         let students = db.students || [];
         
-        // التحقق من الإيميل والباسورد والصف الدراسي معاً
         let found = students.find(s => s.email === email && s.password === pass && s.grade && s.grade.trim() === grade.trim());
 
         if (!found) {
@@ -117,6 +119,19 @@
       } catch (err) {
         msg.innerText = "خطأ في الاتصال بالسيرفر!";
       }
+    }
+
+    function getDriveEmbedUrl(url) {
+      if (!url) return "";
+      let fileId = "";
+      if (url.includes('/file/d/')) {
+        let parts = url.split('/file/d/');
+        if (parts.length > 1) fileId = parts[1].split('/')[0];
+      } else if (url.includes('id=')) {
+        let urlParams = new URLSearchParams(url.split('?')[1]);
+        fileId = urlParams.get('id');
+      }
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
     }
 
     async function loadStudentDashboard() {
@@ -139,30 +154,55 @@
         return;
       }
 
-      let watchedList = (currentStudent.المشاهدات || "").split(',').map(v => v.trim());
+      // تحليل المشاهدات المخزنة (مثال: عنوان الدرس:1 أو عنوان الدرس:2)
+      let viewsMap = {};
+      let watchedRaw = (currentStudent.المشاهدات || "").split(',');
+      watchedRaw.forEach(item => {
+        let parts = item.split(':');
+        if(parts.length >= 1 && parts[0].trim() !== "") {
+          let title = parts[0].trim();
+          let count = parts[1] ? parseInt(parts[1]) : 1;
+          viewsMap[title] = count;
+        }
+      });
 
       studentVideos.forEach(v => {
-        let isWatched = watchedList.includes(v.videoTitle);
+        let title = v.videoTitle;
         let price = v.videoPrice || 0;
+        let viewsUsed = viewsMap[title] || 0; // عدد المرات اللي فتحها بيها
+
+        let actionHtml = "";
+
+        if (viewsUsed === 0) {
+          // لم يشتري أو يشاهد الفيديو من قبل
+          actionHtml = `<button class="btn-unlock" onclick="unlockVideo('${title}', ${price})">فتح الدرس بـ ${price} ج.م 🔓</button>`;
+        } else if (viewsUsed === 1) {
+          // فتح مرّة واحدة وتبقى له مرة أخيرة
+          actionHtml = `
+            <p style="color: #ffc107; font-size: 12px; margin-bottom: 5px;">⚠️ متبقي لك مشاهدة واحدة فقط من أصل مرتين.</p>
+            <button class="btn-play-action" onclick="playVideo('${title}', '${v.videoUrl}')">مشاهدة المرة الثانية والأخيرة 📺</button>
+          `;
+        } else {
+          // استنفد المرتين
+          actionHtml = `<p style="color: #ff4d4d; font-size: 13px; font-weight: bold; text-align: center;">❌ لقد استنفدت الحد الأقصى للمشاهدة (مرتان). تواصل مع الدعم لإعادة التفعيل.</p>`;
+        }
 
         container.innerHTML += `
           <div class="video-card">
             <div class="video-info">
-              <h4>${v.videoTitle}</h4>
-              <p>السعر: ${price} ج.م</p>
+              <h4>${title}</h4>
+              <p>السعر: ${price} ج.م | عدد المشاهدات المستهلكة: <span style="color:#ffc107">${viewsUsed}</span> / 2</p>
             </div>
             <div>
-              ${isWatched ? 
-                `<a href="${v.videoUrl}" target="_blank"><button class="btn-watch" style="background:#00bcd4; color:#000;">مشاهدة الدرس 📺</button></a>` : 
-                `<button class="btn-watch" onclick="unlockVideo('${v.videoTitle}', ${price}, '${v.videoUrl}')">فتح ومشاهدة 🔓</button>`
-              }
+              ${actionHtml}
             </div>
           </div>
         `;
       });
     }
 
-    async function unlockVideo(title, price, url) {
+    // شراء وتشغيل المرة الأولى
+    async function unlockVideo(title, price) {
       let currentBalance = Number(currentStudent.الرصيد || 0);
 
       if (currentBalance < price) {
@@ -170,27 +210,77 @@
         return;
       }
 
-      if (!confirm(`هل تريد خصم ${price} ج.م لفتح هذا الفيديو؟`)) return;
+      if (!confirm(`هل تريد خصم ${price} ج.م وخصم أول مشاهدة لهذا الدرس؟`)) return;
 
       let db = await fetchData();
-      
       let studentInDb = (db.students || []).find(s => s.email === currentStudent.email);
+      
       if (studentInDb) {
         studentInDb.الرصيد = Number(studentInDb.الرصيد || 0) - price;
         
-        let watched = studentInDb.المشاهدات ? studentInDb.المشاهدات.split(',').map(s=>s.trim()) : [];
-        if (!watched.includes(title)) {
-          watched.push(title);
+        let viewsMap = {};
+        let watchedRaw = (studentInDb.المشاهدات || "").split(',');
+        watchedRaw.forEach(item => {
+          let parts = item.split(':');
+          if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
+        });
+
+        // تسجيل أول مشاهدة
+        viewsMap[title] = 1;
+
+        let newWatchedArr = [];
+        for (let key in viewsMap) {
+          newWatchedArr.push(`${key}:${viewsMap[key]}`);
         }
-        studentInDb.المشاهدات = watched.join(', ');
+        studentInDb.المشاهدات = newWatchedArr.join(',');
 
         await saveData(db);
-
         currentStudent = studentInDb;
-        alert("تم فتح الفيديو بنجاح! مبروك مشاهدة ممتعة 🎉");
-        loadStudentDashboard();
-        window.open(url, '_blank');
+        
+        // عرض الفيديو مباشرة
+        showActiveVideoPlayer(title, getDriveEmbedUrl(getOriginalVideoUrl(db, title)));
       }
+    }
+
+    // تشغيل المرة الثانية
+    async function playVideo(title, rawUrl) {
+      if (!confirm("هذه هي محاولتك الأخيرة لمشاهدة الفيديو. هل أنت مستعد للفتح؟")) return;
+
+      let db = await fetchData();
+      let studentInDb = (db.students || []).find(s => s.email === currentStudent.email);
+      
+      if (studentInDb) {
+        let viewsMap = {};
+        let watchedRaw = (studentInDb.المشاهدات || "").split(',');
+        watchedRaw.forEach(item => {
+          let parts = item.split(':');
+          if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
+        });
+
+        // زيادة العداد إلى 2 (الحد الأقصى)
+        viewsMap[title] = 2;
+
+        let newWatchedArr = [];
+        for (let key in viewsMap) {
+          newWatchedArr.push(`${key}:${viewsMap[key]}`);
+        }
+        studentInDb.المشاهدات = newWatchedArr.join(',');
+
+        await saveData(db);
+        currentStudent = studentInDb;
+
+        showActiveVideoPlayer(title, getDriveEmbedUrl(rawUrl));
+      }
+    }
+
+    function getOriginalVideoUrl(db, title) {
+      let v = (db.videos || []).find(x => x.videoTitle === title);
+      return v ? v.videoUrl : "";
+    }
+
+    // دالة لعرض المشغل في نفس الكارت بعد الضغط
+    function showActiveVideoPlayer(title, embedUrl) {
+      loadStudentDashboard(); // تحديث القائمة ليظهر المشغل أو تنبيه انتهاء المرات
     }
 
     function studentLogout() {
