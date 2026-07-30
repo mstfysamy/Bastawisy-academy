@@ -3,143 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الكورسات التعليمية</title>
+  <title>منصة التعليم - بوابة الطالب</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
-    .support-btn { position: fixed; top: 20px; left: 20px; background: #25d366; color: #fff; padding: 10px 15px; border-radius: 50px; text-decoration: none; font-weight: bold; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .container { max-width: 450px; margin: 80px auto 30px auto; padding: 20px; }
-    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; text-align: right; }
-    h2 { color: #ffc107; text-align: center; }
+    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
+    .container { max-width: 450px; margin: 50px auto; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+    h2 { color: #ffc107; text-align: center; margin-bottom: 20px; font-size: 20px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
     input, select, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
-    .btn-main { background: #ffc107; color: #000; font-weight: bold; cursor: pointer; }
-    #dashboard { display: none; text-align: center; }
-    .balance-box { background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
-    .balance-amount { color: #28a745; font-size: 22px; font-weight: bold; }
-    .course-card { background: #252525; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #333; text-align: right; }
-    .course-card h3 { color: #ffc107; margin: 0 0 5px 0; font-size: 16px; }
-    .btn-watch { background: #28a745; color: #fff; padding: 8px 15px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; }
+    button { font-weight: bold; cursor: pointer; background: #ffc107; color: #000; }
+    button:hover { background: #e0a800; }
+    .video-card { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
+    .video-card h4 { color: #00bcd4; margin: 0 0 10px 0; }
+    .btn-watch { background: #28a745; color: #fff; text-decoration: none; display: inline-block; padding: 8px 15px; border-radius: 6px; font-size: 13px; }
+    .balance-box { background: #222; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; color: #ffc107; font-weight: bold; }
+    .msg { font-size: 13px; text-align: center; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
 
-  <a href="https://wa.me/201205206388?text=مرحباً، أريد شحن رصيد" target="_blank" class="support-btn">🎧 الدعم الفني</a>
+  <!-- نموذج التسجيل / الدخول للطالب -->
+  <div id="auth-section" class="container">
+    <h2>🎓 تسجيل دخول / حساب جديد للطالب</h2>
+    <label>الإيميل:</label>
+    <input type="email" id="student-email" placeholder="student@example.com">
+    <label>كلمة السر:</label>
+    <input type="password" id="student-password" placeholder="******">
+    
+    <label>المرحلة الدراسية (إلزامي عند التسجيل):</label>
+    <select id="student-grade">
+      <option value="الصف الرابع الابتدائي">الصف الرابع الابتدائي</option>
+      <option value="الصف الخامس الابتدائي">الصف الخامس الابتدائي</option>
+      <option value="الصف السادس الابتدائي">الصف السادس الابتدائي</option>
+      <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+      <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+      <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+    </select>
 
-  <div class="container">
-    <!-- تسجيل الدخول -->
-    <div id="login-card" class="card">
-      <h2>🔐 تسجيل الدخول</h2>
-      <label>الإيميل:</label><input type="email" id="login-email">
-      <label>كلمة المرور:</label><input type="password" id="login-password">
-      <button class="btn-main" onclick="loginStudent()">دخول 🚀</button>
-      <p id="login-msg" style="color:red; font-size:12px; text-align:center;"></p>
-    </div>
+    <button onclick="studentLoginOrRegister()">دخول / تسجيل 🚀</button>
+    <p id="auth-msg" class="msg"></p>
+  </div>
 
-    <!-- لوحة الطالب -->
-    <div id="dashboard" class="card">
-      <h2>مرحباً يا بطل! 👋</h2>
-      <p id="student-grade-badge" style="color: #00bcd4; font-weight: bold; margin-bottom: 15px;"></p>
-      <div class="balance-box">
-        <p style="margin:0; color:#aaa;">رصيدك الحالي:</p>
-        <p class="balance-amount" id="user-balance">0 ج.م</p>
-      </div>
-      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 فيديوهات صفك الدراسي:</h3>
-      <div id="videos-list">جاري تحميل الفيديوهات...</div>
+  <!-- لوحة الطالب بعد الدخول -->
+  <div id="dashboard-section" class="container hidden" style="max-width: 700px;">
+    <h2>📚 مرحباً بك يا بطل</h2>
+    <div class="balance-box" id="student-balance-display">رصيدك الحالي: 0 ج.م</div>
+    <h3 style="color: #ffc107; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 8px;">فيديوهات مرحلتك الدراسية:</h3>
+    <div id="videos-list-container">
+      <p>جاري تحميل الفيديوهات...</p>
     </div>
+    <button onclick="logout()" style="background: #dc3545; color: #fff; margin-top: 20px;">تسجيل خروج 🚪</button>
   </div>
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
-    let currentStudent = null;
 
-    async function loginStudent() {
-      let email = document.getElementById('login-email').value.trim().toLowerCase();
-      let password = document.getElementById('login-password').value.trim();
-      
+    async function studentLoginOrRegister() {
+      let email = document.getElementById('student-email').value.trim();
+      let password = document.getElementById('student-password').value.trim();
+      let grade = document.getElementById('student-grade').value;
+      let msg = document.getElementById('auth-msg');
+
+      if(!email || !password) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "برجاء كتابة الإيميل وكلمة المرور!";
+        return;
+      }
+
       try {
         let res = await fetch(API_URL);
         let data = await res.json();
         
-        let student = data.find(s => s.email && String(s.email).trim().toLowerCase() === email && String(s.password).trim() === password);
+        let student = data.find(s => s.email && s.email.toLowerCase() === email.toLowerCase());
 
-        if(!student) {
-          document.getElementById('login-msg').innerText = "خطأ في الإيميل أو الباسورد";
+        if(student) {
+          // لو الطالب موجود، نتحقق من الباسورد
+          if(student.password === password) {
+            localStorage.setItem('student_email', student.email);
+            localStorage.setItem('student_grade', student.grade || grade);
+            loadStudentDashboard(student.email, student.grade || grade);
+          } else {
+            msg.style.color = "#ff4d4d";
+            msg.innerText = "كلمة المرور غير صحيحة!";
+          }
+        } else {
+          // لو مش موجود، نسجله جديد بالمعلومات اللي دخلها ومن ضمنها المرحلة الدراسية
+          let newRes = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: { email: email, password: password, grade: grade, الرصيد: 0 } })
+          });
+
+          if(newRes.ok) {
+            localStorage.setItem('student_email', email);
+            localStorage.setItem('student_grade', grade);
+            loadStudentDashboard(email, grade);
+          } else {
+            msg.style.color = "#ff4d4d";
+            msg.innerText = "حدث خطأ أثناء إنشاء الحساب.";
+          }
+        }
+      } catch(err) {
+        msg.style.color = "#ff4d4d";
+        msg.innerText = "خطأ في الاتصال بالخادم!";
+      }
+    }
+
+    async function loadStudentDashboard(email, grade) {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('dashboard-section').classList.remove('hidden');
+
+      try {
+        let res = await fetch(API_URL);
+        let data = await res.json();
+
+        // جلب بيانات الطالب المحدثة (مثل الرصيد)
+        let student = data.find(s => s.email && s.email.toLowerCase() === email.toLowerCase());
+        if(student) {
+          let balance = student.الrصيد !== undefined ? student.الرصيد : (student.الرصيد || 0);
+          document.getElementById('student-balance-display').innerText = `رصيدك الحالي: ${balance} ج.م (${grade})`;
+        }
+
+        // فلترة وعرض فيديوهات صف الطالب فقط
+        let videosContainer = document.getElementById('videos-list-container');
+        videosContainer.innerHTML = "";
+
+        let studentVideos = data.filter(v => v.videoTitle && v.videoGrade && v.videoGrade.trim() === grade.trim());
+
+        if(studentVideos.length === 0) {
+          videosContainer.innerHTML = `<p style="color: #aaa; text-align: center;">لا توجد فيديوهات متاحة لمرحلتك الدراسية حالياً.</p>`;
           return;
         }
 
-        currentStudent = student;
-        document.getElementById('login-card').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        updateUI();
-        loadAvailableVideos(data);
-      } catch(err) {
-        document.getElementById('login-msg').innerText = "خطأ في الاتصال بالخادم!";
-      }
-    }
-
-    function updateUI() {
-      let bal = currentStudent.الرصيد !== undefined ? Number(currentStudent.الرصيد) : 0;
-      document.getElementById('user-balance').innerText = bal + " ج.م";
-      document.getElementById('student-grade-badge').innerText = `المرحلة: ${currentStudent.grade || 'غير محددة'}`;
-    }
-
-    // فلترة دقيقة للفيديوهات بناءً على الصف الدراسي
-    function loadAvailableVideos(allData) {
-      let listDiv = document.getElementById('videos-list');
-      listDiv.innerHTML = "";
-
-      let studentGrade = currentStudent.grade ? currentStudent.grade.trim() : "";
-
-      // فلترة البيانات التي تحتوي على فيديو وتطابق صف الطالب بدقة
-      let videos = allData.filter(item => {
-        return item.videoTitle && item.videoGrade && item.videoGrade.trim() === studentGrade;
-      });
-
-      if(videos.length === 0) {
-        listDiv.innerHTML = "<p style='color:#aaa; font-size:13px;'>لا توجد فيديوهات مضافة لصفك الدراسي حالياً.</p>";
-        return;
-      }
-
-      videos.forEach(v => {
-        listDiv.innerHTML += `
-          <div class="course-card">
-            <h3>${v.videoTitle}</h3>
-            <p style="font-size:13px; color:#ffc107; margin:3px 0;">السعر: ${v.videoPrice} ج.م</p>
-            <button class="btn-watch" onclick="buyAndWatch('${v.videoTitle}', ${v.videoPrice}, '${v.videoUrl}')">شاهد الفيديو 🎬</button>
-          </div>
-        `;
-      });
-    }
-
-    async function buyAndWatch(title, price, url) {
-      let currentBal = Number(currentStudent.الرصيد || 0);
-
-      if(currentBal < price) {
-        alert("رصيدك غير كافٍ لفتح هذا الفيديو! تواصل مع الدعم للشحن.");
-        return;
-      }
-
-      if(!confirm(`هل تريد خصم ${price} ج.م ومشاهدة الدرس؟`)) return;
-
-      let newBal = currentBal - price;
-
-      try {
-        let res = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: { الرصيد: newBal } })
+        studentVideos.forEach(v => {
+          videosContainer.innerHTML += `
+            <div class="video-card">
+              <h4>${v.videoTitle}</h4>
+              <p style="font-size: 13px; color: #ccc;">السعر لفتح الدرس: ${v.videoPrice || 0} ج.م</p>
+              <a href="${v.videoUrl}" target="_blank" class="btn-watch">مشاهدة الشرح 🎬</a>
+            </div>
+          `;
         });
 
-        if(res.ok) {
-          currentStudent.الرصيد = newBal;
-          updateUI();
-          window.open(url, "_blank");
-        } else {
-          alert("حدث خطأ أثناء خصم الرصيد.");
-        }
       } catch(err) {
-        alert("خطأ في الاتصال بالخادم.");
+        console.log(err);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('student_email');
+      localStorage.removeItem('student_grade');
+      location.reload();
+    }
+
+    // الدخول التلقائي لو الطالب مسجل قبل كده من نفس المتصفح
+    window.onload = function() {
+      let savedEmail = localStorage.getItem('student_email');
+      let savedGrade = localStorage.getItem('student_grade');
+      if(savedEmail && savedGrade) {
+        loadStudentDashboard(savedEmail, savedGrade);
       }
     }
   </script>
