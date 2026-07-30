@@ -6,7 +6,10 @@
   <title>لوحة التحكم الاحترافية - الأدمن</title>
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
-    .menu-btn { position: fixed; top: 20px; right: 20px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; padding: 10px 15px; font-size: 22px; border-radius: 8px; cursor: pointer; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    
+    /* زر القائمة الجانبية (ثلاث شرط / علامة إغلاق) تم نقله لليمين */
+    .menu-btn { position: fixed; top: 15px; right: 15px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; width: 45px; height: 45px; font-size: 20px; border-radius: 8px; cursor: pointer; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+    
     .sidebar { width: 280px; background: #181818; height: 100vh; position: fixed; right: -280px; top: 0; transition: 0.3s ease; border-left: 1px solid #333; z-index: 1500; padding-top: 70px; overflow-y: auto; }
     .sidebar.active { right: 0; }
     .sidebar h3 { color: #ffc107; text-align: center; margin-bottom: 15px; font-size: 16px; }
@@ -44,7 +47,8 @@
 </head>
 <body>
 
-  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+  <!-- زر التحكم الجانبي تم نقله لليمين ويتحول لعلامة إغلاق -->
+  <button class="menu-btn" id="menuToggleBtn" onclick="toggleSidebar()">☰</button>
 
   <div class="sidebar" id="sidebar">
     <h3>⚙️ لوحة التحكم</h3>
@@ -182,7 +186,18 @@
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
 
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+    function toggleSidebar() {
+      let sidebar = document.getElementById('sidebar');
+      let btn = document.getElementById('menuToggleBtn');
+      sidebar.classList.toggle('active');
+      
+      // تغيير شكل الزر بين الثلاث شرط وعلامة الإغلاق
+      if(sidebar.classList.contains('active')) {
+        btn.innerText = "✕";
+      } else {
+        btn.innerText = "☰";
+      }
+    }
     
     function toggleDropdown(id) {
       let el = document.getElementById(id);
@@ -193,6 +208,7 @@
       document.querySelectorAll('.card').forEach(c => c.classList.remove('active-tab'));
       document.getElementById(tabId).classList.add('active-tab');
       document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('menuToggleBtn').innerText = "☰"; // إرجاع الزر لشكل الثلاث شرط عند اختيار صفحة
     }
 
     // فلترة وعرض طلاب سنة معينة
