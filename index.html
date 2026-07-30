@@ -44,7 +44,7 @@
         <p style="margin:0; color:#aaa;">رصيدك الحالي:</p>
         <p class="balance-amount" id="user-balance">0 ج.م</p>
       </div>
-      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 فيديوهات صستك الدراسية:</h3>
+      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 فيديوهات صفك الدراسي:</h3>
       <div id="videos-list">جاري تحميل الفيديوهات...</div>
     </div>
   </div>
@@ -57,20 +57,25 @@
       let email = document.getElementById('login-email').value.trim().toLowerCase();
       let password = document.getElementById('login-password').value.trim();
       
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let student = data.find(s => String(s.email).trim().toLowerCase() === email && String(s.password).trim() === password);
+      try {
+        let res = await fetch(API_URL);
+        let data = await res.json();
+        
+        let student = data.find(s => s.email && String(s.email).trim().toLowerCase() === email && String(s.password).trim() === password);
 
-      if(!student) {
-        document.getElementById('login-msg').innerText = "خطأ في الإيميل أو الباسورد";
-        return;
+        if(!student) {
+          document.getElementById('login-msg').innerText = "خطأ في الإيميل أو الباسورد";
+          return;
+        }
+
+        currentStudent = student;
+        document.getElementById('login-card').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        updateUI();
+        loadAvailableVideos(data);
+      } catch(err) {
+        document.getElementById('login-msg').innerText = "خطأ في الاتصال بالخادم!";
       }
-
-      currentStudent = student;
-      document.getElementById('login-card').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      updateUI();
-      loadAvailableVideos(data);
     }
 
     function updateUI() {
@@ -79,15 +84,17 @@
       document.getElementById('student-grade-badge').innerText = `المرحلة: ${currentStudent.grade || 'غير محددة'}`;
     }
 
-    // عرض الفيديوهات الخاصة بسنة الطالب فقط
-    async function loadAvailableVideos(allData) {
+    // فلترة دقيقة للفيديوهات بناءً على الصف الدراسي
+    function loadAvailableVideos(allData) {
       let listDiv = document.getElementById('videos-list');
       listDiv.innerHTML = "";
 
       let studentGrade = currentStudent.grade ? currentStudent.grade.trim() : "";
 
-      // فلترة الفيديوهات التي تطابق سنة الطالب فقط
-      let videos = allData.filter(item => item.videoTitle && item.videoGrade && item.videoGrade.trim() === studentGrade);
+      // فلترة البيانات التي تحتوي على فيديو وتطابق صف الطالب بدقة
+      let videos = allData.filter(item => {
+        return item.videoTitle && item.videoGrade && item.videoGrade.trim() === studentGrade;
+      });
 
       if(videos.length === 0) {
         listDiv.innerHTML = "<p style='color:#aaa; font-size:13px;'>لا توجد فيديوهات مضافة لصفك الدراسي حالياً.</p>";
@@ -105,7 +112,6 @@
       });
     }
 
-    // خصم السعر وفتح الفيديو
     async function buyAndWatch(title, price, url) {
       let currentBal = Number(currentStudent.الرصيد || 0);
 
@@ -118,18 +124,22 @@
 
       let newBal = currentBal - price;
 
-      let res = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { الرصيد: newBal } })
-      });
+      try {
+        let res = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: { الرصيد: newBal } })
+        });
 
-      if(res.ok) {
-        currentStudent.الرصيد = newBal;
-        updateUI();
-        window.open(url, "_blank");
-      } else {
-        alert("حدث خطأ أثناء خصم الرصيد.");
+        if(res.ok) {
+          currentStudent.الرصيد = newBal;
+          updateUI();
+          window.open(url, "_blank");
+        } else {
+          alert("حدث خطأ أثناء خصم الرصيد.");
+        }
+      } catch(err) {
+        alert("خطأ في الاتصال بالخادم.");
       }
     }
   </script>
