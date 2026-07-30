@@ -7,14 +7,12 @@
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
     
-    /* زر القائمة الجانبية (ثلاث شرط / علامة إغلاق) تم نقله لليمين */
     .menu-btn { position: fixed; top: 15px; right: 15px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; width: 45px; height: 45px; font-size: 20px; border-radius: 8px; cursor: pointer; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
     
     .sidebar { width: 280px; background: #181818; height: 100vh; position: fixed; right: -280px; top: 0; transition: 0.3s ease; border-left: 1px solid #333; z-index: 1500; padding-top: 70px; overflow-y: auto; }
     .sidebar.active { right: 0; }
     .sidebar h3 { color: #ffc107; text-align: center; margin-bottom: 15px; font-size: 16px; }
     
-    /* القوائم المنسدلة الجانبية */
     .dropdown-btn { background: #222; color: #fff; padding: 12px 20px; width: 100%; border: none; text-align: right; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
     .dropdown-btn:hover { background: #2a2a2a; color: #ffc107; }
     .dropdown-container { display: none; background: #151515; padding-right: 10px; border-bottom: 1px solid #333; }
@@ -47,13 +45,11 @@
 </head>
 <body>
 
-  <!-- زر التحكم الجانبي تم نقله لليمين ويتحول لعلامة إغلاق -->
   <button class="menu-btn" id="menuToggleBtn" onclick="toggleSidebar()">☰</button>
 
   <div class="sidebar" id="sidebar">
     <h3>⚙️ لوحة التحكم</h3>
 
-    <!-- 1. قائمة الطلاب المنسدلة -->
     <button class="dropdown-btn" onclick="toggleDropdown('students-dropdown')">
       <span>👥 قائمة الطلاب حسب الصف</span> <span>▼</span>
     </button>
@@ -66,7 +62,6 @@
       <a onclick="filterStudents('الصف الثالث الاعدادي', this)">الصف الثالث الاعدادي</a>
     </div>
 
-    <!-- 2. قائمة الفيديوهات المنسدلة -->
     <button class="dropdown-btn" onclick="toggleDropdown('videos-dropdown')">
       <span>🎥 قائمة الفيديوهات حسب الصف</span> <span>▼</span>
     </button>
@@ -79,7 +74,6 @@
       <a onclick="filterVideos('الصف الثالث الاعدادي', this)">الصف الثالث الاعدادي</a>
     </div>
 
-    <!-- الأزرار الثابتة -->
     <a class="sidebar-link" onclick="switchTab('tab-add-student')">➕ إضافة طالب جديد</a>
     <a class="sidebar-link" onclick="switchTab('tab-add-video')">🎬 إضافة فيديو جديد</a>
     <a class="sidebar-link" onclick="switchTab('tab-bulk')">⚡ الشحن الجماعي للكل</a>
@@ -87,7 +81,6 @@
 
   <div class="main-content">
     
-    <!-- عرض طلاب صف معين -->
     <div id="tab-students-list" class="card active-tab">
       <h2 id="students-title">👥 اختر صفاً من القائمة الجانبية لعرض الطلاب</h2>
       <div class="table-container">
@@ -108,7 +101,6 @@
       </div>
     </div>
 
-    <!-- عرض فيديوهات صف معين -->
     <div id="tab-videos-list" class="card">
       <h2 id="videos-title">🎥 اختر صفاً من القائمة الجانبية لعرض الفيديوهات</h2>
       <div class="table-container">
@@ -128,7 +120,6 @@
       </div>
     </div>
 
-    <!-- إضافة طالب جديد -->
     <div id="tab-add-student" class="card">
       <h2>➕ إضافة طالب وتحديد سنته</h2>
       <label>الإيميل:</label>
@@ -150,7 +141,6 @@
       <p id="msg-add" class="msg"></p>
     </div>
 
-    <!-- إضافة فيديو جديد -->
     <div id="tab-add-video" class="card">
       <h2>🎬 إضافة فيديو لصف دراسي محدد</h2>
       <label>اختر الصف الدراسي للفيديو:</label>
@@ -172,7 +162,6 @@
       <p id="msg-video" class="msg"></p>
     </div>
 
-    <!-- الشحن الجماعي -->
     <div id="tab-bulk" class="card">
       <h2>⚡ شحن رصيد لكل الطلاب دفعة واحدة</h2>
       <label>المبلغ المراد إضافته لكل الطلاب:</label>
@@ -184,19 +173,13 @@
   </div>
 
   <script>
-    const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
+    const API_URL = 'https://api.npoint.io/fc637c1cc625a97476e9';
 
     function toggleSidebar() {
       let sidebar = document.getElementById('sidebar');
       let btn = document.getElementById('menuToggleBtn');
       sidebar.classList.toggle('active');
-      
-      // تغيير شكل الزر بين الثلاث شرط وعلامة الإغلاق
-      if(sidebar.classList.contains('active')) {
-        btn.innerText = "✕";
-      } else {
-        btn.innerText = "☰";
-      }
+      btn.innerText = sidebar.classList.contains('active') ? "✕" : "☰";
     }
     
     function toggleDropdown(id) {
@@ -208,22 +191,33 @@
       document.querySelectorAll('.card').forEach(c => c.classList.remove('active-tab'));
       document.getElementById(tabId).classList.add('active-tab');
       document.getElementById('sidebar').classList.remove('active');
-      document.getElementById('menuToggleBtn').innerText = "☰"; // إرجاع الزر لشكل الثلاث شرط عند اختيار صفحة
+      document.getElementById('menuToggleBtn').innerText = "☰";
     }
 
-    // فلترة وعرض طلاب سنة معينة
-    async function filterStudents(gradeName, el) {
+    async function fetchData() {
+      let res = await fetch(API_URL);
+      return await res.json();
+    }
+
+    async function saveData(data) {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+
+    async function filterStudents(gradeName) {
       switchTab('tab-students-list');
       document.getElementById('students-title').innerText = `👥 طلاب ${gradeName}`;
       let tbody = document.getElementById('students-table-body');
       tbody.innerHTML = `<tr><td colspan="5">جاري التحميل...</td></tr>`;
 
       try {
-        let res = await fetch(API_URL);
-        let data = await res.json();
+        let db = await fetchData();
         tbody.innerHTML = "";
-
-        let filtered = data.filter(s => s.email && s.grade && s.grade.trim() === gradeName);
+        let students = db.students || [];
+        let filtered = students.filter(s => s.grade && s.grade.trim() === gradeName);
 
         if(filtered.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5">لا يوجد طلاب مسجلين في هذا الصف حالياً.</td></tr>`;
@@ -250,19 +244,17 @@
       }
     }
 
-    // فلترة وعرض فيديوهات سنة معينة
-    async function filterVideos(gradeName, el) {
+    async function filterVideos(gradeName) {
       switchTab('tab-videos-list');
       document.getElementById('videos-title').innerText = `🎥 فيديوهات ${gradeName}`;
       let tbody = document.getElementById('videos-table-body');
       tbody.innerHTML = `<tr><td colspan="4">جاري التحميل...</td></tr>`;
 
       try {
-        let res = await fetch(API_URL);
-        let data = await res.json();
+        let db = await fetchData();
         tbody.innerHTML = "";
-
-        let filtered = data.filter(v => v.videoTitle && v.videoGrade && v.videoGrade.trim() === gradeName);
+        let videos = db.videos || [];
+        let filtered = videos.filter(v => v.videoGrade && v.videoGrade.trim() === gradeName);
 
         if(filtered.length === 0) {
           tbody.innerHTML = `<tr><td colspan="4">لا توجد فيديوهات مضافة لهذا الصف حالياً.</td></tr>`;
@@ -276,7 +268,7 @@
               <td>${v.videoPrice || 0} ج.م</td>
               <td><a href="${v.videoUrl}" target="_blank" style="color:#00bcd4;">رابط الفيديو</a></td>
               <td>
-                <button class="btn-delete" onclick="deleteVideo('${encodeURIComponent(v.videoTitle)}', '${gradeName}')">حذف ❌</button>
+                <button class="btn-delete" onclick="deleteVideo('${v.videoTitle}', '${gradeName}')">حذف ❌</button>
               </td>
             </tr>
           `;
@@ -286,11 +278,13 @@
       }
     }
 
-    async function deleteVideo(encodedTitle, gradeName) {
+    async function deleteVideo(title, gradeName) {
       if(!confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً؟")) return;
-      let res = await fetch(`${API_URL}/videoTitle/${encodedTitle}`, { method: 'DELETE' });
-      if(res.ok) { alert("تم الحذف بنجاح!"); filterVideos(gradeName); }
-      else { alert("فشل الحذف."); }
+      let db = await fetchData();
+      db.videos = (db.videos || []).filter(v => v.videoTitle !== title);
+      await saveData(db);
+      alert("تم الحذف بنجاح!");
+      filterVideos(gradeName);
     }
 
     async function chargeIndividual(email, currentBalance, gradeName) {
@@ -298,16 +292,15 @@
       if (!amountStr) return;
       let amount = Number(amountStr);
       if (isNaN(amount) || amount <= 0) { alert("رقم غير صحيح!"); return; }
-      let newBalance = Number(currentBalance) + amount;
-
-      let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { الرصيد: newBalance } })
-      });
-
-      if (res.ok) { alert("تم الشحن بنجاح!"); filterStudents(gradeName); }
-      else { alert("فشل الشحن."); }
+      
+      let db = await fetchData();
+      let student = (db.students || []).find(s => s.email === email);
+      if(student) {
+        student.الرصيد = Number(currentBalance) + amount;
+        await saveData(db);
+        alert("تم الشحن بنجاح!");
+        filterStudents(gradeName);
+      }
     }
 
     async function addNewStudent() {
@@ -322,27 +315,25 @@
         return;
       }
 
-      let res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { email: email, password: password, grade: grade, الرصيد: Number(balance || 0) } })
-      });
+      let db = await fetchData();
+      if(!db.students) db.students = [];
+      
+      db.students.push({ email: email, password: password, grade: grade, الرصيد: Number(balance || 0), المشاهدات: "" });
+      await saveData(db);
 
-      if(res.ok) {
-        msg.style.color = "#28a745"; msg.innerText = "تمت إضافة الطالب بنجاح! 🚀";
-        document.getElementById('add-email').value = "";
-        document.getElementById('add-password').value = "";
-        document.getElementById('add-balance').value = "";
-      } else {
-        msg.style.color = "#ff4d4d"; msg.innerText = "حدث خطأ.";
-      }
+      msg.style.color = "#28a745"; msg.innerText = "تمت إضافة الطالب بنجاح! 🚀";
+      document.getElementById('add-email').value = "";
+      document.getElementById('add-password').value = "";
+      document.getElementById('add-balance').value = "";
     }
 
     async function deleteStudent(email, gradeName) {
       if(!confirm(`هل أنت متأكد من حذف الطالب: ${email}؟`)) return;
-      let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, { method: 'DELETE' });
-      if(res.ok) { alert("تم الحذف بنجاح!"); filterStudents(gradeName); }
-      else { alert("فشل الحذف."); }
+      let db = await fetchData();
+      db.students = (db.students || []).filter(s => s.email !== email);
+      await saveData(db);
+      alert("تم الحذف بنجاح!");
+      filterStudents(gradeName);
     }
 
     async function bulkRecharge() {
@@ -351,17 +342,12 @@
       if(!amountToAdd || amountToAdd <= 0) { msg.style.color = "#ff4d4d"; msg.innerText = "أدخل مبلغ صحيح!"; return; }
       if(!confirm(`إضافة ${amountToAdd} لجميع الطلاب؟`)) return;
 
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      for(let s of data) {
-        if(s.email) {
-          let newBal = Number(s.الرصيد || 0) + amountToAdd;
-          await fetch(`${API_URL}/email/${encodeURIComponent(s.email)}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: { الرصيد: newBal } })
-          });
-        }
+      let db = await fetchData();
+      if(db.students) {
+        db.students.forEach(s => {
+          s.الرصيد = Number(s.الرصيد || 0) + amountToAdd;
+        });
+        await saveData(db);
       }
       msg.style.color = "#28a745"; msg.innerText = "تم الشحن للجميع بنجاح! 💰";
     }
@@ -378,21 +364,17 @@
         return;
       }
 
-      let res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { videoGrade: grade, videoTitle: title, videoPrice: Number(price), videoUrl: url } })
-      });
+      let db = await fetchData();
+      if(!db.videos) db.videos = [];
 
-      if(res.ok) {
-        msg.style.color = "#28a745";
-        msg.innerText = "تم نشر الفيديو للصف الدراسي بنجاح! 🎉";
-        document.getElementById('video-title').value = "";
-        document.getElementById('video-price').value = "";
-        document.getElementById('video-url').value = "";
-      } else {
-        msg.style.color = "#ff4d4d"; msg.innerText = "حدث خطأ.";
-      }
+      db.videos.push({ videoGrade: grade, videoTitle: title, videoPrice: Number(price), videoUrl: url });
+      await saveData(db);
+
+      msg.style.color = "#28a745";
+      msg.innerText = "تم نشر الفيديو للصف الدراسي بنجاح! 🎉";
+      document.getElementById('video-title').value = "";
+      document.getElementById('video-price').value = "";
+      document.getElementById('video-url').value = "";
     }
   </script>
 </body>
