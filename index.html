@@ -11,15 +11,16 @@
     h2 { color: #ffc107; text-align: center; margin-bottom: 20px; font-size: 18px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
     input, select, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
-    input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
+    input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
     button { font-weight: bold; cursor: pointer; background: #ffc107; color: #000; }
     button:hover { background: #e0a800; }
     .hidden { display: none; }
-    .student-header { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; font-size: 14px; }
+    .student-header { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #444; font-size: 14px; flex-wrap: wrap; gap: 5px; }
     .video-card { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .video-info h4 { margin: 0 0 5px 0; color: #ffc107; font-size: 15px; }
     .video-info p { margin: 0; color: #aaa; font-size: 12px; }
     .btn-watch { background: #28a745; color: #fff; padding: 8px 15px; border-radius: 6px; width: auto; font-size: 13px; }
+    .support-btn { display: block; background: #25d366; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
   </style>
 </head>
@@ -32,16 +33,31 @@
       <h2>🎓 تسجيل دخول الطالب</h2>
       <label>البريد الإلكتروني:</label>
       <input type="email" id="login-email" placeholder="student@example.com">
+      
       <label>كلمة المرور:</label>
       <input type="password" id="login-password" placeholder="******">
+      
+      <label>الصف الدراسي:</label>
+      <select id="login-grade">
+        <option value="الصف الرابع الابتدائي">الصف الرابع الابتدائي</option>
+        <option value="الصف الخامس الابتدائي">الصف الخامس الابتدائي</option>
+        <option value="الصف السادس الابتدائي">الصف السادس الابتدائي</option>
+        <option value="الصف الأول الاعدادي">الصف الأول الاعدادي</option>
+        <option value="الصف الثاني الاعدادي">الصف الثاني الاعدادي</option>
+        <option value="الصف الثالث الاعدادي">الصف الثالث الاعدادي</option>
+      </select>
+
       <button onclick="studentLogin()">تسجيل الدخول 🚀</button>
       <p id="login-msg" class="msg" style="color: #ff4d4d;"></p>
+      
+      <a class="support-btn" href="https://wa.me/201205206388" target="_blank">💬 التواصل مع الدعم الفني (واتساب)</a>
     </div>
 
     <!-- قسم لوحة الطالب بعد الدخول -->
     <div id="student-dashboard" class="card hidden">
       <div class="student-header">
         <div>مرحباً: <span id="lbl-student-email" style="color: #ffc107;"></span></div>
+        <div>الصف: <span id="lbl-student-grade" style="color: #00bcd4;"></span></div>
         <div>الرصيد: <span id="lbl-student-balance" style="color: #28a745; font-weight: bold;">0</span> ج.م</div>
       </div>
 
@@ -50,7 +66,8 @@
         <!-- سيتم تحميل فيديوهات الصف هنا ديناميكياً -->
       </div>
       
-      <button onclick="studentLogout()" style="background: #dc3545; color: #fff; margin-top: 20px;">تسجيل الخروج 🚪</button>
+      <a class="support-btn" href="https://wa.me/201205206388" target="_blank">💬 واجهتك مشكلة؟ كلم الدعم (واتساب)</a>
+      <button onclick="studentLogout()" style="background: #dc3545; color: #fff; margin-top: 15px;">تسجيل الخروج 🚪</button>
     </div>
 
   </div>
@@ -75,6 +92,7 @@
     async function studentLogin() {
       let email = document.getElementById('login-email').value.trim();
       let pass = document.getElementById('login-password').value.trim();
+      let grade = document.getElementById('login-grade').value;
       let msg = document.getElementById('login-msg');
 
       if (!email || !pass) {
@@ -85,10 +103,12 @@
       try {
         let db = await fetchData();
         let students = db.students || [];
-        let found = students.find(s => s.email === email && s.password === pass);
+        
+        // التحقق من الإيميل والباسورد والصف الدراسي معاً
+        let found = students.find(s => s.email === email && s.password === pass && s.grade && s.grade.trim() === grade.trim());
 
         if (!found) {
-          msg.innerText = "خطأ في الإيميل أو كلمة المرور!";
+          msg.innerText = "خطأ في الإيميل، كلمة المرور، أو الصف الدراسي غير متطابق!";
           return;
         }
 
@@ -104,6 +124,7 @@
       document.getElementById('student-dashboard').classList.remove('hidden');
       
       document.getElementById('lbl-student-email').innerText = currentStudent.email;
+      document.getElementById('lbl-student-grade').innerText = currentStudent.grade;
       document.getElementById('lbl-student-balance').innerText = currentStudent.الرصيد !== undefined ? currentStudent.الرصيد : 0;
 
       let db = await fetchData();
@@ -111,7 +132,6 @@
       let container = document.getElementById('videos-list-container');
       container.innerHTML = "";
 
-      // فلترة الفيديوهات حسب صف الطالب الحالي
       let studentVideos = allVideos.filter(v => v.videoGrade && v.videoGrade.trim() === currentStudent.grade.trim());
 
       if (studentVideos.length === 0) {
@@ -146,7 +166,7 @@
       let currentBalance = Number(currentStudent.الرصيد || 0);
 
       if (currentBalance < price) {
-        alert("رصيدك غير كافي لفتح هذا الفيديو! برجاء شحن الرصيد.");
+        alert("رصيدك غير كافي لفتح هذا الفيديو! برجاء التواصل مع الدعم لشحن الرصيد.");
         return;
       }
 
@@ -154,7 +174,6 @@
 
       let db = await fetchData();
       
-      // خصم الرصيد وتحديث المشاهدات للطالب في الداتابيز العامة
       let studentInDb = (db.students || []).find(s => s.email === currentStudent.email);
       if (studentInDb) {
         studentInDb.الرصيد = Number(studentInDb.الرصيد || 0) - price;
@@ -167,7 +186,6 @@
 
         await saveData(db);
 
-        // تحديث البيانات محلياً
         currentStudent = studentInDb;
         alert("تم فتح الفيديو بنجاح! مبروك مشاهدة ممتعة 🎉");
         loadStudentDashboard();
