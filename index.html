@@ -21,8 +21,11 @@
     .video-info p { margin: 0 0 5px 0; color: #aaa; font-size: 13px; }
     .btn-unlock { background: #28a745; color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; }
     .btn-play-action { background: #00bcd4; color: #000; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; font-weight: bold; }
-    .video-container { margin-top: 10px; position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
-    .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+    
+    /* مشغل فيديو آمن ومحمي بالكامل مع دعم التكبير */
+    .secure-video-wrapper { margin-top: 10px; width: 100%; background: #000; border-radius: 8px; overflow: hidden; position: relative; }
+    video { width: 100%; display: block; max-height: 400px; outline: none; }
+
     .support-btn { display: block; background: #25d366; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
   </style>
@@ -121,7 +124,8 @@
       }
     }
 
-    function getDriveEmbedUrl(url) {
+    // دالة تحويل رابط جوجل درايف لرابط تشغيل مباشر حصري (Direct Stream Link)
+    function getDirectDriveUrl(url) {
       if (!url) return "";
       let fileId = "";
       if (url.includes('/file/d/')) {
@@ -131,7 +135,7 @@
         let urlParams = new URLSearchParams(url.split('?')[1]);
         fileId = urlParams.get('id');
       }
-      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
+      return fileId ? `https://docs.google.com/uc?export=download&id=${fileId}` : url;
     }
 
     async function loadStudentDashboard() {
@@ -169,25 +173,30 @@
         let title = v.videoTitle;
         let price = v.videoPrice || 0;
         let viewsUsed = viewsMap[title] || 0; 
-        let embedUrl = getDriveEmbedUrl(v.videoUrl);
+        let directUrl = getDirectDriveUrl(v.videoUrl);
 
         let actionHtml = "";
 
         if (viewsUsed === 0) {
-          actionHtml = `<button class="btn-unlock" onclick="unlockVideo('${title}', ${price}, '${v.videoUrl}')">فتح الدرس بـ ${price} ج.م 🔓</button>`;
+          actionHtml = `<button class="btn-unlock" onclick="unlockVideo('${title}', ${price})">فتح الدرس بـ ${price} ج.م 🔓</button>`;
         } else if (viewsUsed === 1) {
           actionHtml = `
             <p style="color: #ffc107; font-size: 12px; margin-bottom: 5px;">⚠️ متبقي لك مشاهدة واحدة فقط من أصل مرتين.</p>
-            <button class="btn-play-action" onclick="playVideo('${title}', '${v.videoUrl}')">مشاهدة المرة الثانية والأخيرة 📺</button>
-            <div class="video-container" style="margin-top:10px;">
-              <iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>
+            <button class="btn-play-action" onclick="playVideo('${title}')">مشاهدة المرة الثانية والأخيرة 📺</button>
+            <div class="secure-video-wrapper" style="margin-top:10px;">
+              <video controls controlsList="nodownload" oncontextmenu="return false;">
+                <source src="${directUrl}" type="video/mp4">
+                متصفحك لا يدعم عرض الفيديو.
+              </video>
             </div>
           `;
         } else {
           actionHtml = `
             <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; text-align: center; margin-bottom:10px;">❌ لقد استنفدت الحد الأقصى للمشاهدة (مرتان).</p>
-            <div class="video-container" style="opacity: 0.3; pointer-events: none;">
-              <iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>
+            <div class="secure-video-wrapper" style="opacity: 0.3; pointer-events: none;">
+              <video controls controlsList="nodownload">
+                <source src="${directUrl}" type="video/mp4">
+              </video>
             </div>
           `;
         }
@@ -206,7 +215,7 @@
       });
     }
 
-    async function unlockVideo(title, price, rawUrl) {
+    async function unlockVideo(title, price) {
       let currentBalance = Number(currentStudent.الرصيد || 0);
 
       if (currentBalance < price) {
@@ -245,7 +254,7 @@
       }
     }
 
-    async function playVideo(title, rawUrl) {
+    async function playVideo(title) {
       if (!confirm("هذه هي محاولتك الأخيرة لمشاهدة الفيديو. هل أنت مستعد؟")) return;
 
       let db = await fetchData();
