@@ -154,7 +154,6 @@
         return;
       }
 
-      // تحليل المشاهدات المخزنة (مثال: عنوان الدرس:1 أو عنوان الدرس:2)
       let viewsMap = {};
       let watchedRaw = (currentStudent.المشاهدات || "").split(',');
       watchedRaw.forEach(item => {
@@ -169,22 +168,28 @@
       studentVideos.forEach(v => {
         let title = v.videoTitle;
         let price = v.videoPrice || 0;
-        let viewsUsed = viewsMap[title] || 0; // عدد المرات اللي فتحها بيها
+        let viewsUsed = viewsMap[title] || 0; 
+        let embedUrl = getDriveEmbedUrl(v.videoUrl);
 
         let actionHtml = "";
 
         if (viewsUsed === 0) {
-          // لم يشتري أو يشاهد الفيديو من قبل
-          actionHtml = `<button class="btn-unlock" onclick="unlockVideo('${title}', ${price})">فتح الدرس بـ ${price} ج.م 🔓</button>`;
+          actionHtml = `<button class="btn-unlock" onclick="unlockVideo('${title}', ${price}, '${v.videoUrl}')">فتح الدرس بـ ${price} ج.م 🔓</button>`;
         } else if (viewsUsed === 1) {
-          // فتح مرّة واحدة وتبقى له مرة أخيرة
           actionHtml = `
             <p style="color: #ffc107; font-size: 12px; margin-bottom: 5px;">⚠️ متبقي لك مشاهدة واحدة فقط من أصل مرتين.</p>
             <button class="btn-play-action" onclick="playVideo('${title}', '${v.videoUrl}')">مشاهدة المرة الثانية والأخيرة 📺</button>
+            <div class="video-container" style="margin-top:10px;">
+              <iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>
+            </div>
           `;
         } else {
-          // استنفد المرتين
-          actionHtml = `<p style="color: #ff4d4d; font-size: 13px; font-weight: bold; text-align: center;">❌ لقد استنفدت الحد الأقصى للمشاهدة (مرتان). تواصل مع الدعم لإعادة التفعيل.</p>`;
+          actionHtml = `
+            <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; text-align: center; margin-bottom:10px;">❌ لقد استنفدت الحد الأقصى للمشاهدة (مرتان).</p>
+            <div class="video-container" style="opacity: 0.3; pointer-events: none;">
+              <iframe src="${embedUrl}" allow="autoplay" allowfullscreen></iframe>
+            </div>
+          `;
         }
 
         container.innerHTML += `
@@ -201,8 +206,7 @@
       });
     }
 
-    // شراء وتشغيل المرة الأولى
-    async function unlockVideo(title, price) {
+    async function unlockVideo(title, price, rawUrl) {
       let currentBalance = Number(currentStudent.الرصيد || 0);
 
       if (currentBalance < price) {
@@ -210,7 +214,7 @@
         return;
       }
 
-      if (!confirm(`هل تريد خصم ${price} ج.م وخصم أول مشاهدة لهذا الدرس؟`)) return;
+      if (!confirm(`هل تريد خصم ${price} ج.م وفتح أول مشاهدة لهذا الدرس؟`)) return;
 
       let db = await fetchData();
       let studentInDb = (db.students || []).find(s => s.email === currentStudent.email);
@@ -225,7 +229,6 @@
           if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
         });
 
-        // تسجيل أول مشاهدة
         viewsMap[title] = 1;
 
         let newWatchedArr = [];
@@ -237,14 +240,13 @@
         await saveData(db);
         currentStudent = studentInDb;
         
-        // عرض الفيديو مباشرة
-        showActiveVideoPlayer(title, getDriveEmbedUrl(getOriginalVideoUrl(db, title)));
+        alert("تم فتح الفيديو بنجاح ومبروك أول مشاهدة! 🎉");
+        loadStudentDashboard();
       }
     }
 
-    // تشغيل المرة الثانية
     async function playVideo(title, rawUrl) {
-      if (!confirm("هذه هي محاولتك الأخيرة لمشاهدة الفيديو. هل أنت مستعد للفتح؟")) return;
+      if (!confirm("هذه هي محاولتك الأخيرة لمشاهدة الفيديو. هل أنت مستعد؟")) return;
 
       let db = await fetchData();
       let studentInDb = (db.students || []).find(s => s.email === currentStudent.email);
@@ -257,7 +259,6 @@
           if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
         });
 
-        // زيادة العداد إلى 2 (الحد الأقصى)
         viewsMap[title] = 2;
 
         let newWatchedArr = [];
@@ -269,18 +270,8 @@
         await saveData(db);
         currentStudent = studentInDb;
 
-        showActiveVideoPlayer(title, getDriveEmbedUrl(rawUrl));
+        loadStudentDashboard();
       }
-    }
-
-    function getOriginalVideoUrl(db, title) {
-      let v = (db.videos || []).find(x => x.videoTitle === title);
-      return v ? v.videoUrl : "";
-    }
-
-    // دالة لعرض المشغل في نفس الكارت بعد الضغط
-    function showActiveVideoPlayer(title, embedUrl) {
-      loadStudentDashboard(); // تحديث القائمة ليظهر المشغل أو تنبيه انتهاء المرات
     }
 
     function studentLogout() {
