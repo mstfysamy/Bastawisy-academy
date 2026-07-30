@@ -22,6 +22,8 @@
     button { font-weight: bold; cursor: pointer; }
     .btn-add { background: #28a745; color: #fff; }
     .btn-video { background: #00bcd4; color: #000; }
+    .btn-bulk { background: #ff9800; color: #000; }
+    .btn-delete { background: #dc3545; color: #fff; padding: 6px 12px; border-radius: 4px; width: auto; font-size: 12px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: center; }
     th, td { border: 1px solid #444; padding: 10px; }
     th { background: #222; color: #ffc107; }
@@ -36,31 +38,53 @@
     <h3>⚙️ لوحة التحكم</h3>
     <a onclick="switchTab('tab-students', this)" class="active">👥 جميع الطلاب</a>
     <a onclick="switchTab('tab-add-student', this)">➕ إضافة طالب جديد</a>
+    <a onclick="switchTab('tab-bulk', this)">⚡ شحن جماعي للكل</a>
     <a onclick="switchTab('tab-add-video', this)">🎥 إضافة فيديو وسعر</a>
-    <a onclick="switchTab('tab-bulk', this)">⚡ شحن جماعي</a>
   </div>
 
   <div class="main-content">
-    <!-- الطلاب -->
+    
+    <!-- 1. عرض وحذف الطلاب -->
     <div id="tab-students" class="card active-tab">
-      <h2>👥 قائمة الطلاب</h2>
+      <h2>👥 قائمة الطلاب المسجلين</h2>
       <table>
-        <thead><tr><th>الإيميل</th><th>الباسورد</th><th>الرصيد</th></tr></thead>
-        <tbody id="students-table-body"><tr><td colspan="3">جاري التحميل...</td></tr></tbody>
+        <thead>
+          <tr>
+            <th>الإيميل</th>
+            <th>الباسورد</th>
+            <th>الرصيد</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="students-table-body">
+          <tr><td colspan="4">جاري التحميل...</td></tr>
+        </tbody>
       </table>
     </div>
 
-    <!-- إضافة طالب -->
+    <!-- 2. إضافة طالب جديد -->
     <div id="tab-add-student" class="card">
-      <h2>➕ إضافة طالب</h2>
-      <label>الإيميل:</label><input type="email" id="add-email">
-      <label>كلمة السر:</label><input type="password" id="add-password">
-      <label>الرصيد:</label><input type="number" id="add-balance">
+      <h2>➕ إضافة طالب جديد</h2>
+      <label>الإيميل:</label>
+      <input type="email" id="add-email" placeholder="student@example.com">
+      <label>كلمة السر:</label>
+      <input type="password" id="add-password" placeholder="******">
+      <label>الرصيد الابتدائي:</label>
+      <input type="number" id="add-balance" placeholder="0">
       <button class="btn-add" onclick="addNewStudent()">حفظ الطالب 🚀</button>
       <p id="msg-add" class="msg"></p>
     </div>
 
-    <!-- إضافة فيديو جديد وسعره -->
+    <!-- 3. الشحن الجماعي -->
+    <div id="tab-bulk" class="card">
+      <h2>⚡ شحن رصيد لكل الطلاب دفعة واحدة</h2>
+      <label>المبلغ المراد إضافته لكل الطلاب (بالجنيه):</label>
+      <input type="number" id="bulk-amount" placeholder="مثلاً: 100">
+      <button class="btn-bulk" onclick="bulkRecharge()">شحن للجميع الآن 💰</button>
+      <p id="msg-bulk" class="msg"></p>
+    </div>
+
+    <!-- 4. إضافة فيديو جديد وسعره -->
     <div id="tab-add-video" class="card">
       <h2>🎥 إضافة فيديو جديد للمنصة</h2>
       <label>عنوان الدرس / الفيديو:</label>
@@ -72,14 +96,18 @@
       <button class="btn-video" onclick="addVideoToPlatform()">نشر الفيديو للطلاب 🎬</button>
       <p id="msg-video" class="msg"></p>
     </div>
+
   </div>
 
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
-    // لو هتعمل رابط تاني خاص بالفيديوهات حطه هنا، أو هنستخدم نفس الـ API لو مخصص أعمدة مختلفة
 
     window.onload = function() { loadStudents(); };
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+    function toggleSidebar() { 
+      document.getElementById('sidebar').classList.toggle('active'); 
+    }
+
     function switchTab(tabId, el) {
       document.querySelectorAll('.card').forEach(c => c.classList.remove('active-tab'));
       document.getElementById(tabId).classList.add('active-tab');
@@ -88,34 +116,121 @@
       document.getElementById('sidebar').classList.remove('active');
     }
 
+    // تحميل الطلاب في الجدول مع زر الحذف
     async function loadStudents() {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      let tbody = document.getElementById('students-table-body');
-      tbody.innerHTML = "";
-      data.forEach(s => {
-        if(s.email) {
-          tbody.innerHTML += `<tr><td>${s.email}</td><td>${s.password || ''}</td><td>${s.الرصيد || 0} ج.م</td></tr>`;
+      try {
+        let res = await fetch(API_URL);
+        let data = await res.json();
+        let tbody = document.getElementById('students-table-body');
+        tbody.innerHTML = "";
+
+        let validStudents = data.filter(s => s.email);
+
+        if(validStudents.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4">لا يوجد طلاب مسجلين حالياً.</td></tr>`;
+          return;
         }
-      });
+
+        validStudents.forEach(s => {
+          let balance = s.الرصيد !== undefined ? s.الرصيد : 0;
+          tbody.innerHTML += `
+            <tr>
+              <td>${s.email}</td>
+              <td>${s.password || ''}</td>
+              <td>${balance} ج.م</td>
+              <td><button class="btn-delete" onclick="deleteStudent('${s.email}')">حذف ❌</button></td>
+            </tr>
+          `;
+        });
+      } catch(err) {
+        document.getElementById('students-table-body').innerHTML = `<tr><td colspan="4" style="color:red;">خطأ في الاتصال بالسيرفر!</td></tr>`;
+      }
     }
 
+    // إضافة طالب جديد
     async function addNewStudent() {
       let email = document.getElementById('add-email').value.trim();
       let password = document.getElementById('add-password').value.trim();
       let balance = document.getElementById('add-balance').value.trim();
       let msg = document.getElementById('msg-add');
 
-      await fetch(API_URL, {
+      if (!email || !password) {
+        msg.style.color = "#ff4d4d"; msg.innerText = "برجاء كتابة الإيميل والباسورد!";
+        return;
+      }
+
+      let res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { email: email, password: password, الرصيد: Number(balance), المشاهدات: "" } })
+        body: JSON.stringify({ data: { email: email, password: password, الرصيد: Number(balance || 0), المشاهدات: "" } })
       });
-      msg.style.color = "#28a745"; msg.innerText = "تمت الإضافة بنجاح!";
-      loadStudents();
+
+      if(res.ok) {
+        msg.style.color = "#28a745"; msg.innerText = "تمت إضافة الطالب بنجاح! 🚀";
+        document.getElementById('add-email').value = "";
+        document.getElementById('add-password').value = "";
+        document.getElementById('add-balance').value = "";
+        loadStudents();
+      } else {
+        msg.style.color = "#ff4d4d"; msg.innerText = "حدث خطأ أثناء الإضافة.";
+      }
     }
 
-    // إرسال الفيديو الجديد للشيت
+    // حذف طالب
+    async function deleteStudent(email) {
+      if(!confirm(`هل أنت متأكد من حذف الطالب: ${email}؟`)) return;
+
+      let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, {
+        method: 'DELETE'
+      });
+
+      if(res.ok) {
+        alert("تم حذف الطالب بنجاح!");
+        loadStudents();
+      } else {
+        alert("فشل في حذف الطالب.");
+      }
+    }
+
+    // الشحن الجماعي
+    async function bulkRecharge() {
+      let amountToAdd = Number(document.getElementById('bulk-amount').value);
+      let msg = document.getElementById('msg-bulk');
+
+      if(!amountToAdd || amountToAdd <= 0) {
+        msg.style.color = "#ff4d4d"; msg.innerText = "برجاء ادخال مبلغ صحيح للشحن!";
+        return;
+      }
+
+      if(!confirm(`هل أنت متأكد من إضافة ${amountToAdd} ج.م لجميع الطلاب؟`)) return;
+
+      msg.style.color = "#ffc107"; msg.innerText = "جاري تنفيذ الشحن الجماعي...";
+
+      try {
+        let res = await fetch(API_URL);
+        let data = await res.json();
+
+        for(let s of data) {
+          if(s.email) {
+            let currentBal = Number(s.الرصيد || 0);
+            let newBal = currentBal + amountToAdd;
+
+            await fetch(`${API_URL}/email/${encodeURIComponent(s.email)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: { الرصيد: newBal } })
+            });
+          }
+        }
+
+        msg.style.color = "#28a745"; msg.innerText = "تم شحن رصيد الجميع بنجاح! 💰🎉";
+        loadStudents();
+      } catch(err) {
+        msg.style.color = "#ff4d4d"; msg.innerText = "حدث خطأ أثناء الشحن الجماعي.";
+      }
+    }
+
+    // إضافة فيديو جديد
     async function addVideoToPlatform() {
       let title = document.getElementById('video-title').value.trim();
       let price = document.getElementById('video-price').value.trim();
@@ -127,21 +242,19 @@
         return;
       }
 
-      try {
-        let res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ data: { videoTitle: title, videoPrice: Number(price), videoUrl: url } })
-        });
+      let res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { videoTitle: title, videoPrice: Number(price), videoUrl: url } })
+      });
 
-        if(res.ok) {
-          msg.style.color = "#28a745";
-          msg.innerText = "تم نشر الفيديو بنجاح وهيوصل للطلاب أوتوماتيك! 🎉";
-          document.getElementById('video-title').value = "";
-          document.getElementById('video-price').value = "";
-          document.getElementById('video-url').value = "";
-        }
-      } catch(err) {
+      if(res.ok) {
+        msg.style.color = "#28a745";
+        msg.innerText = "تم نشر الفيديو بنجاح وهيوصل للطلاب أوتوماتيك! 🎉";
+        document.getElementById('video-title').value = "";
+        document.getElementById('video-price').value = "";
+        document.getElementById('video-url').value = "";
+      } else {
         msg.style.color = "#ff4d4d"; msg.innerText = "خطأ في النشر.";
       }
     }
