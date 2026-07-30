@@ -6,7 +6,7 @@
   <title>منصة التعليم - بوابة الطالب</title>
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
-    .container { max-width: 450px; margin: 50px auto; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+    .container { max-width: 450px; margin: 40px auto; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; }
     h2 { color: #ffc107; text-align: center; margin-bottom: 20px; font-size: 20px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
     input, select, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
@@ -17,6 +17,13 @@
     .video-card h4 { color: #00bcd4; margin: 0 0 10px 0; }
     .btn-watch { background: #28a745; color: #fff; text-decoration: none; display: inline-block; padding: 8px 15px; border-radius: 6px; font-size: 13px; }
     .balance-box { background: #222; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; color: #ffc107; font-weight: bold; }
+    
+    /* تصميم صندوق الدعم الفني والواتساب */
+    .support-box { background: #181818; border: 1px dashed #28a745; padding: 12px; border-radius: 8px; text-align: center; margin-top: 20px; }
+    .support-box p { margin: 0 0 8px 0; font-size: 13px; color: #ccc; }
+    .whatsapp-btn { background: #25d366; color: #fff; text-decoration: none; display: block; padding: 10px; border-radius: 6px; font-size: 14px; font-weight: bold; }
+    .whatsapp-btn:hover { background: #20ba5a; }
+
     .msg { font-size: 13px; text-align: center; }
     .hidden { display: none; }
   </style>
@@ -43,6 +50,12 @@
 
     <button onclick="studentLoginOrRegister()">دخول / تسجيل 🚀</button>
     <p id="auth-msg" class="msg"></p>
+
+    <!-- دعم فني في صفحة تسجيل الدخول أيضاً -->
+    <div class="support-box">
+      <p>تواجه مشكلة في التسجيل أو الشحن؟ 🛠️</p>
+      <a href="https://wa.me/201205206388" target="_blank" class="whatsapp-btn">💬 تواصل مع الدعم واتساب</a>
+    </div>
   </div>
 
   <!-- لوحة الطالب بعد الدخول -->
@@ -53,7 +66,14 @@
     <div id="videos-list-container">
       <p>جاري تحميل الفيديوهات...</p>
     </div>
-    <button onclick="logout()" style="background: #dc3545; color: #fff; margin-top: 20px;">تسجيل خروج 🚪</button>
+
+    <!-- صندوق الدعم الفني داخل لوحة الطالب -->
+    <div class="support-box">
+      <p>تحتاج شحن رصيد أو عندك استفسار دراسي؟ 📞</p>
+      <a href="https://wa.me/201205206388" target="_blank" class="whatsapp-btn">💬 تواصل مع الدعم الفني (واتساب)</a>
+    </div>
+
+    <button onclick="logout()" style="background: #dc3545; color: #fff; margin-top: 15px;">تسجيل خروج 🚪</button>
   </div>
 
   <script>
@@ -78,7 +98,6 @@
         let student = data.find(s => s.email && s.email.toLowerCase() === email.toLowerCase());
 
         if(student) {
-          // لو الطالب موجود، نتحقق من الباسورد
           if(student.password === password) {
             localStorage.setItem('student_email', student.email);
             localStorage.setItem('student_grade', student.grade || grade);
@@ -88,7 +107,6 @@
             msg.innerText = "كلمة المرور غير صحيحة!";
           }
         } else {
-          // لو مش موجود، نسجله جديد بالمعلومات اللي دخلها ومن ضمنها المرحلة الدراسية
           let newRes = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -118,14 +136,12 @@
         let res = await fetch(API_URL);
         let data = await res.json();
 
-        // جلب بيانات الطالب المحدثة (مثل الرصيد)
         let student = data.find(s => s.email && s.email.toLowerCase() === email.toLowerCase());
         if(student) {
-          let balance = student.الrصيد !== undefined ? student.الرصيد : (student.الرصيد || 0);
+          let balance = student.الرصيد !== undefined ? student.الرصيد : 0;
           document.getElementById('student-balance-display').innerText = `رصيدك الحالي: ${balance} ج.م (${grade})`;
         }
 
-        // فلترة وعرض فيديوهات صف الطالب فقط
         let videosContainer = document.getElementById('videos-list-container');
         videosContainer.innerHTML = "";
 
@@ -157,7 +173,6 @@
       location.reload();
     }
 
-    // الدخول التلقائي لو الطالب مسجل قبل كده من نفس المتصفح
     window.onload = function() {
       let savedEmail = localStorage.getItem('student_email');
       let savedGrade = localStorage.getItem('student_grade');
