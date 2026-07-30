@@ -22,11 +22,12 @@
     .btn-unlock { background: #28a745; color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; }
     .btn-play-action { background: #00bcd4; color: #000; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; font-weight: bold; }
     
-    /* حاوية الفيديو الآمنة مع قفل أي أزرار خارجية وتفعيل التكبير */
+    /* حاوية الفيديو المحمية */
     .video-container { margin-top: 10px; position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
     .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-    /* طبقة شفافة حماية لمنع الضغط على أيقونات جوجل درايف العلوية ومشاركة الرابط */
-    .video-shield { position: absolute; top: 0; left: 0; width: 100%; height: 45px; z-index: 10; background: transparent; pointer-events: auto; }
+    
+    /* غطاء ذكي يمنع النقر في أعلى الإطار حيث توجد أيقونة جوجل درايف فقط ويترك باقي الفيديو يعمل بحرية */
+    .shield-top { position: absolute; top: 0; left: 0; width: 100%; height: 50px; background: transparent; z-index: 99; }
 
     .support-btn { display: block; background: #25d366; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
@@ -126,7 +127,7 @@
       }
     }
 
-    // دالة استخراج رابط المعاينة السليم لجوجل درايف
+    // استخراج معرّف ملف جوجل درايف وتحويله لرابط عرض نظيف
     function getDriveEmbedUrl(url) {
       if (!url) return "";
       let fileId = "";
@@ -137,7 +138,7 @@
         let urlParams = new URLSearchParams(url.split('?')[1]);
         fileId = urlParams.get('id');
       }
-      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview?usp=drivesdk` : url;
     }
 
     async function loadStudentDashboard() {
@@ -186,7 +187,7 @@
             <p style="color: #ffc107; font-size: 12px; margin-bottom: 5px;">⚠️ متبقي لك مشاهدة واحدة فقط من أصل مرتين.</p>
             <button class="btn-play-action" onclick="playVideo('${title}')">مشاهدة المرة الثانية والأخيرة 📺</button>
             <div class="video-container" style="margin-top:10px;">
-              <div class="video-shield" title="محمي بواسطة المنصة"></div>
+              <div class="shield-top"></div>
               <iframe src="${embedUrl}" allow="autoplay; fullscreen" allowfullscreen></iframe>
             </div>
           `;
@@ -284,6 +285,7 @@
     function studentLogout() {
       currentStudent = null;
       document.getElementById('student-dashboard').classList.add('hidden');
+      document.getElementById('login-section').classList.add('hidden');
       document.getElementById('login-section').classList.remove('hidden');
       document.getElementById('login-email').value = "";
       document.getElementById('login-password').value = "";
