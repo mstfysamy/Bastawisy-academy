@@ -22,12 +22,14 @@
     .btn-unlock { background: #28a745; color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; }
     .btn-play-action { background: #00bcd4; color: #000; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; font-weight: bold; }
     
-    /* حاوية الفيديو مع تفعيل خاصية التكبير المطلق */
+    /* حاوية الفيديو مع زرار التكبير اليدوي المضمون */
     .video-container { margin-top: 10px; position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
     .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-    
-    /* حجب شريط جوجل درايف العلوي لمنع التسريب مع إبقاء زر التكبير السفلي يعمل بحرية */
     .shield-top { position: absolute; top: 0; left: 0; width: 100%; height: 45px; background: transparent; z-index: 99; }
+    
+    /* زرار تكبير الشاشة الإضافي المضمن */
+    .btn-fullscreen-custom { background: #ff5722; color: #fff; padding: 8px; margin-top: 5px; border-radius: 6px; font-size: 13px; width: 100%; border: none; font-weight: bold; cursor: pointer; }
+    .btn-fullscreen-custom:hover { background: #e64a19; }
 
     .support-btn { display: block; background: #25d366; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
@@ -127,7 +129,6 @@
       }
     }
 
-    // استخراج معرّف ملف جوجل درايف للـ Embed
     function getDriveEmbedUrl(url) {
       if (!url) return "";
       let fileId = "";
@@ -139,6 +140,18 @@
         fileId = urlParams.get('id');
       }
       return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : url;
+    }
+
+    // دالة تكبير الفيديو شاشة كاملة بالقوة
+    function makeFullscreen(containerId) {
+      let container = document.getElementById(containerId);
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      } else if (container.webkitRequestFullscreen) {
+        container.webkitRequestFullscreen();
+      } else if (container.msRequestFullscreen) {
+        container.msRequestFullscreen();
+      }
     }
 
     async function loadStudentDashboard() {
@@ -172,11 +185,12 @@
         }
       });
 
-      studentVideos.forEach(v => {
+      studentVideos.forEach((v, index) => {
         let title = v.videoTitle;
         let price = v.videoPrice || 0;
         let viewsUsed = viewsMap[title] || 0; 
         let embedUrl = getDriveEmbedUrl(v.videoUrl);
+        let boxId = "vid-box-" + index;
 
         let actionHtml = "";
 
@@ -186,16 +200,17 @@
           actionHtml = `
             <p style="color: #ffc107; font-size: 12px; margin-bottom: 5px;">⚠️ متبقي لك مشاهدة واحدة فقط من أصل مرتين.</p>
             <button class="btn-play-action" onclick="playVideo('${title}')">مشاهدة المرة الثانية والأخيرة 📺</button>
-            <div class="video-container" style="margin-top:10px;">
+            <div id="${boxId}" class="video-container" style="margin-top:10px;">
               <div class="shield-top"></div>
-              <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
+              <iframe src="${embedUrl}" allow="autoplay; fullscreen" allowfullscreen></iframe>
             </div>
+            <button class="btn-fullscreen-custom" onclick="makeFullscreen('${boxId}')">⛶ تكبير الفيديو لملء الشاشة ⛶</button>
           `;
         } else {
           actionHtml = `
             <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; text-align: center; margin-bottom:10px;">❌ لقد استنفدت الحد الأقصى للمشاهدة (مرتان).</p>
             <div class="video-container" style="opacity: 0.3; pointer-events: none;">
-              <iframe src="${embedUrl}" allowfullscreen="true"></iframe>
+              <iframe src="${embedUrl}" allowfullscreen></iframe>
             </div>
           `;
         }
@@ -261,7 +276,7 @@
       
       if (studentInDb) {
         let viewsMap = {};
-        let watchedRaw = (studentInDb.المشاهدات || "").split(',');
+        let watchedRaw = (studentInDb.المשاهدات || "").split(',');
         watchedRaw.forEach(item => {
           let parts = item.split(':');
           if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
