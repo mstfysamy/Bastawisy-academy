@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الكورسات</title>
+  <title>منصة الكورسات التعليمية</title>
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
     .support-btn { position: fixed; top: 20px; left: 20px; background: #25d366; color: #fff; padding: 10px 15px; border-radius: 50px; text-decoration: none; font-weight: bold; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .container { max-width: 450px; margin: 80px auto 30px auto; padding: 20px; }
     .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; text-align: right; }
     h2 { color: #ffc107; text-align: center; }
-    input, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
-    input { background: #2a2a2a; color: #fff; border: 1px solid #444; }
+    label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
+    input, select, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
+    input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
     .btn-main { background: #ffc107; color: #000; font-weight: bold; cursor: pointer; }
     #dashboard { display: none; text-align: center; }
     .balance-box { background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
@@ -31,18 +32,19 @@
       <h2>🔐 تسجيل الدخول</h2>
       <label>الإيميل:</label><input type="email" id="login-email">
       <label>كلمة المرور:</label><input type="password" id="login-password">
-      <button class="btn-main" onclick="loginStudent()">دخول</button>
+      <button class="btn-main" onclick="loginStudent()">دخول 🚀</button>
       <p id="login-msg" style="color:red; font-size:12px; text-align:center;"></p>
     </div>
 
     <!-- لوحة الطالب -->
     <div id="dashboard" class="card">
-      <h2>مرحباً بك! 👋</h2>
+      <h2>مرحباً يا بطل! 👋</h2>
+      <p id="student-grade-badge" style="color: #00bcd4; font-weight: bold; margin-bottom: 15px;"></p>
       <div class="balance-box">
         <p style="margin:0; color:#aaa;">رصيدك الحالي:</p>
         <p class="balance-amount" id="user-balance">0 ج.م</p>
       </div>
-      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 الفيديوهات المتاحة من الأدمن:</h3>
+      <h3 style="text-align:right; font-size:15px; color:#fff;">📚 فيديوهات صستك الدراسية:</h3>
       <div id="videos-list">جاري تحميل الفيديوهات...</div>
     </div>
   </div>
@@ -74,18 +76,21 @@
     function updateUI() {
       let bal = currentStudent.الرصيد !== undefined ? Number(currentStudent.الرصيد) : 0;
       document.getElementById('user-balance').innerText = bal + " ج.م";
+      document.getElementById('student-grade-badge').innerText = `المرحلة: ${currentStudent.grade || 'غير محددة'}`;
     }
 
-    // جلب الفيديوهات اللي الأدمن ضافها من الشيت
+    // عرض الفيديوهات الخاصة بسنة الطالب فقط
     async function loadAvailableVideos(allData) {
       let listDiv = document.getElementById('videos-list');
       listDiv.innerHTML = "";
 
-      // تصفية الصفوف التي تحتوي على فيديوهات أضافها الأدمن
-      let videos = allData.filter(item => item.videoTitle);
+      let studentGrade = currentStudent.grade ? currentStudent.grade.trim() : "";
+
+      // فلترة الفيديوهات التي تطابق سنة الطالب فقط
+      let videos = allData.filter(item => item.videoTitle && item.videoGrade && item.videoGrade.trim() === studentGrade);
 
       if(videos.length === 0) {
-        listDiv.innerHTML = "<p style='color:#aaa; font-size:13px;'>لا توجد فيديوهات مضافة حالياً.</p>";
+        listDiv.innerHTML = "<p style='color:#aaa; font-size:13px;'>لا توجد فيديوهات مضافة لصفك الدراسي حالياً.</p>";
         return;
       }
 
@@ -94,7 +99,7 @@
           <div class="course-card">
             <h3>${v.videoTitle}</h3>
             <p style="font-size:13px; color:#ffc107; margin:3px 0;">السعر: ${v.videoPrice} ج.م</p>
-            <button class="btn-watch" onclick="buyAndWatch('${v.videoTitle}', ${v.videoPrice}, '${v.videoUrl}')">شاهد وافتح الفيديو 🎬</button>
+            <button class="btn-watch" onclick="buyAndWatch('${v.videoTitle}', ${v.videoPrice}, '${v.videoUrl}')">شاهد الفيديو 🎬</button>
           </div>
         `;
       });
@@ -113,7 +118,6 @@
 
       let newBal = currentBal - price;
 
-      // تحديث الرصيد الجديد للطالب في الشيت
       let res = await fetch(`${API_URL}/email/${encodeURIComponent(currentStudent.email)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
