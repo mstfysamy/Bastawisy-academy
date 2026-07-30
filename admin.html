@@ -5,17 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة التحكم الاحترافية - الأدمن</title>
   <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
     .menu-btn { position: fixed; top: 20px; right: 20px; background: #1e1e1e; color: #ffc107; border: 1px solid #333; padding: 10px 15px; font-size: 22px; border-radius: 8px; cursor: pointer; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .sidebar { width: 260px; background: #181818; height: 100vh; position: fixed; right: -260px; top: 0; transition: 0.3s ease; border-left: 1px solid #333; z-index: 1500; padding-top: 80px; }
+    .sidebar { width: 280px; background: #181818; height: 100vh; position: fixed; right: -280px; top: 0; transition: 0.3s ease; border-left: 1px solid #333; z-index: 1500; padding-top: 70px; overflow-y: auto; }
     .sidebar.active { right: 0; }
-    .sidebar h3 { color: #ffc107; text-align: center; margin-bottom: 25px; }
-    .sidebar a { display: block; padding: 15px 25px; color: #ccc; text-decoration: none; border-bottom: 1px solid #222; cursor: pointer; }
-    .sidebar a:hover, .sidebar a.active { background: #252525; color: #ffc107; border-right: 4px solid #ffc107; }
-    .main-content { padding: 30px; max-width: 950px; margin: 60px auto 0 auto; }
-    .card { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; display: none; }
+    .sidebar h3 { color: #ffc107; text-align: center; margin-bottom: 15px; font-size: 16px; }
+    
+    /* القوائم المنسدلة الجانبية */
+    .dropdown-btn { background: #222; color: #fff; padding: 12px 20px; width: 100%; border: none; text-align: right; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+    .dropdown-btn:hover { background: #2a2a2a; color: #ffc107; }
+    .dropdown-container { display: none; background: #151515; padding-right: 10px; border-bottom: 1px solid #333; }
+    .dropdown-container a { display: block; padding: 10px 15px; color: #bbb; text-decoration: none; font-size: 13px; cursor: pointer; border-bottom: 1px dashed #222; }
+    .dropdown-container a:hover { color: #ffc107; background: #1e1e1e; }
+    
+    .sidebar-link { display: block; padding: 14px 20px; color: #ccc; text-decoration: none; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; font-weight: bold; background: #181818; }
+    .sidebar-link:hover { background: #252525; color: #ffc107; }
+
+    .main-content { padding: 15px; max-width: 950px; margin: 60px auto 0 auto; }
+    .card { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; display: none; }
     .card.active-tab { display: block; }
-    h2 { color: #ffc107; text-align: center; margin-bottom: 20px; }
+    h2 { color: #ffc107; text-align: center; margin-bottom: 20px; font-size: 17px; }
     label { font-size: 13px; color: #aaa; display: block; margin-top: 10px; }
     input, select, button { width: 100%; padding: 12px; margin: 6px 0 12px 0; border-radius: 8px; border: none; box-sizing: border-box; }
     input, select { background: #2a2a2a; color: #fff; border: 1px solid #444; }
@@ -25,8 +34,10 @@
     .btn-bulk { background: #ff9800; color: #000; }
     .btn-charge { background: #ffc107; color: #000; padding: 6px 10px; border-radius: 4px; width: auto; font-size: 12px; margin-left: 5px; }
     .btn-delete { background: #dc3545; color: #fff; padding: 6px 10px; border-radius: 4px; width: auto; font-size: 12px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: center; }
-    th, td { border: 1px solid #444; padding: 10px; }
+    
+    .table-container { width: 100%; overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; min-width: 550px; }
+    th, td { border: 1px solid #444; padding: 8px; white-space: nowrap; }
     th { background: #222; color: #ffc107; }
     .msg { font-size: 13px; text-align: center; margin-top: 5px; }
   </style>
@@ -37,35 +48,83 @@
 
   <div class="sidebar" id="sidebar">
     <h3>⚙️ لوحة التحكم</h3>
-    <a onclick="switchTab('tab-students', this)" class="active">👥 جدول الطلاب والبيانات</a>
-    <a onclick="switchTab('tab-add-student', this)">➕ إضافة طالب جديد</a>
-    <a onclick="switchTab('tab-bulk', this)">⚡ شحن جماعي للكل</a>
-    <a onclick="switchTab('tab-add-video', this)">🎥 إضافة فيديو لصف معين</a>
-    <a onclick="switchTab('tab-manage-videos', this)">📋 إدارة وحذف الفيديوهات</a>
+
+    <!-- 1. قائمة الطلاب المنسدلة -->
+    <button class="dropdown-btn" onclick="toggleDropdown('students-dropdown')">
+      <span>👥 قائمة الطلاب حسب الصف</span> <span>▼</span>
+    </button>
+    <div id="students-dropdown" class="dropdown-container">
+      <a onclick="filterStudents('الصف الرابع الابتدائي', this)">الصف الرابع الابتدائي</a>
+      <a onclick="filterStudents('الصف الخامس الابتدائي', this)">الصف الخامس الابتدائي</a>
+      <a onclick="filterStudents('الصف السادس الابتدائي', this)">الصف السادس الابتدائي</a>
+      <a onclick="filterStudents('الصف الأول الاعدادي', this)">الصف الأول الاعدادي</a>
+      <a onclick="filterStudents('الصف الثاني الاعدادي', this)">الصف الثاني الاعدادي</a>
+      <a onclick="filterStudents('الصف الثالث الاعدادي', this)">الصف الثالث الاعدادي</a>
+    </div>
+
+    <!-- 2. قائمة الفيديوهات المنسدلة -->
+    <button class="dropdown-btn" onclick="toggleDropdown('videos-dropdown')">
+      <span>🎥 قائمة الفيديوهات حسب الصف</span> <span>▼</span>
+    </button>
+    <div id="videos-dropdown" class="dropdown-container">
+      <a onclick="filterVideos('الصف الرابع الابتدائي', this)">الصف الرابع الابتدائي</a>
+      <a onclick="filterVideos('الصف الخامس الابتدائي', this)">الصف الخامس الابتدائي</a>
+      <a onclick="filterVideos('الصف السادس الابتدائي', this)">الصف السادس الابتدائي</a>
+      <a onclick="filterVideos('الصف الأول الاعدادي', this)">الصف الأول الاعدادي</a>
+      <a onclick="filterVideos('الصف الثاني الاعدادي', this)">الصف الثاني الاعدادي</a>
+      <a onclick="filterVideos('الصف الثالث الاعدادي', this)">الصف الثالث الاعدادي</a>
+    </div>
+
+    <!-- الأزرار الثابتة -->
+    <a class="sidebar-link" onclick="switchTab('tab-add-student')">➕ إضافة طالب جديد</a>
+    <a class="sidebar-link" onclick="switchTab('tab-add-video')">🎬 إضافة فيديو جديد</a>
+    <a class="sidebar-link" onclick="switchTab('tab-bulk')">⚡ الشحن الجماعي للكل</a>
   </div>
 
   <div class="main-content">
     
-    <!-- 1. عرض الطلاب (تمت إضافة الصف وكلمة السر) -->
-    <div id="tab-students" class="card active-tab">
-      <h2>👥 قائمة الطلاب والبيانات الكاملة</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>الإيميل</th>
-            <th>كلمة السر</th>
-            <th>الصف الدراسي</th>
-            <th>الرصيد</th>
-            <th>إجراءات</th>
-          </tr>
-        </thead>
-        <tbody id="students-table-body">
-          <tr><td colspan="5">جاري التحميل...</td></tr>
-        </tbody>
-      </table>
+    <!-- عرض طلاب صف معين -->
+    <div id="tab-students-list" class="card active-tab">
+      <h2 id="students-title">👥 اختر صفاً من القائمة الجانبية لعرض الطلاب</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>الإيميل</th>
+              <th>كلمة السر</th>
+              <th>الصف الدراسي</th>
+              <th>الرصيد</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <tr><td colspan="5">قم باختيار مرحلة من القائمة الجانبية...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- 2. إضافة طالب جديد -->
+    <!-- عرض فيديوهات صف معين -->
+    <div id="tab-videos-list" class="card">
+      <h2 id="videos-title">🎥 اختر صفاً من القائمة الجانبية لعرض الفيديوهات</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>عنوان الدرس</th>
+              <th>السعر</th>
+              <th>رابط الفيديو</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="videos-table-body">
+            <tr><td colspan="4">قم باختيار مرحلة من القائمة الجانبية...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- إضافة طالب جديد -->
     <div id="tab-add-student" class="card">
       <h2>➕ إضافة طالب وتحديد سنته</h2>
       <label>الإيميل:</label>
@@ -87,18 +146,9 @@
       <p id="msg-add" class="msg"></p>
     </div>
 
-    <!-- 3. الشحن الجماعي -->
-    <div id="tab-bulk" class="card">
-      <h2>⚡ شحن رصيد لكل الطلاب دفعة واحدة</h2>
-      <label>المبلغ المراد إضافته لكل الطلاب:</label>
-      <input type="number" id="bulk-amount" placeholder="مثلاً: 100">
-      <button class="btn-bulk" onclick="bulkRecharge()">شحن للجميع الآن 💰</button>
-      <p id="msg-bulk" class="msg"></p>
-    </div>
-
-    <!-- 4. إضافة فيديو لصف معين -->
+    <!-- إضافة فيديو جديد -->
     <div id="tab-add-video" class="card">
-      <h2>🎥 إضافة فيديو لصف دراسي محدد</h2>
+      <h2>🎬 إضافة فيديو لصف دراسي محدد</h2>
       <label>اختر الصف الدراسي للفيديو:</label>
       <select id="video-grade">
         <option value="الصف الرابع الابتدائي">الصف الرابع الابتدائي</option>
@@ -118,22 +168,13 @@
       <p id="msg-video" class="msg"></p>
     </div>
 
-    <!-- 5. إدارة وحذف الفيديوهات -->
-    <div id="tab-manage-videos" class="card">
-      <h2>📋 قائمة الفيديوهات المضافة (إدارة وحذف)</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>الصف الدراسي</th>
-            <th>عنوان الدرس</th>
-            <th>السعر</th>
-            <th>إجراء</th>
-          </tr>
-        </thead>
-        <tbody id="videos-table-body">
-          <tr><td colspan="4">جاري تحميل الفيديوهات...</td></tr>
-        </tbody>
-      </table>
+    <!-- الشحن الجماعي -->
+    <div id="tab-bulk" class="card">
+      <h2>⚡ شحن رصيد لكل الطلاب دفعة واحدة</h2>
+      <label>المبلغ المراد إضافته لكل الطلاب:</label>
+      <input type="number" id="bulk-amount" placeholder="مثلاً: 100">
+      <button class="btn-bulk" onclick="bulkRecharge()">شحن للجميع الآن 💰</button>
+      <p id="msg-bulk" class="msg"></p>
     </div>
 
   </div>
@@ -141,99 +182,102 @@
   <script>
     const API_URL = 'https://sheetdb.io/api/v1/cniwo746z5aba';
 
-    window.onload = function() { 
-      loadStudents(); 
-      loadVideos();
-    };
-
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-    function switchTab(tabId, el) {
-      document.querySelectorAll('.card').forEach(c => c.classList.remove('active-tab'));
-      document.getElementById(tabId).classList.add('active-tab');
-      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('sidebar').classList.remove('active');
-      
-      if(tabId === 'tab-students') loadStudents();
-      if(tabId === 'tab-manage-videos') loadVideos();
+    
+    function toggleDropdown(id) {
+      let el = document.getElementById(id);
+      el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
-    // عرض الطلاب مع الباسورد والصف الدراسي
-    async function loadStudents() {
+    function switchTab(tabId) {
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active-tab'));
+      document.getElementById(tabId).classList.add('active-tab');
+      document.getElementById('sidebar').classList.remove('active');
+    }
+
+    // فلترة وعرض طلاب سنة معينة
+    async function filterStudents(gradeName, el) {
+      switchTab('tab-students-list');
+      document.getElementById('students-title').innerText = `👥 طلاب ${gradeName}`;
+      let tbody = document.getElementById('students-table-body');
+      tbody.innerHTML = `<tr><td colspan="5">جاري التحميل...</td></tr>`;
+
       try {
         let res = await fetch(API_URL);
         let data = await res.json();
-        let tbody = document.getElementById('students-table-body');
         tbody.innerHTML = "";
 
-        let validStudents = data.filter(s => s.email);
+        let filtered = data.filter(s => s.email && s.grade && s.grade.trim() === gradeName);
 
-        if(validStudents.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5">لا يوجد طلاب مسجلين حالياً.</td></tr>`;
+        if(filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5">لا يوجد طلاب مسجلين في هذا الصف حالياً.</td></tr>`;
           return;
         }
 
-        validStudents.forEach(s => {
+        filtered.forEach(s => {
           let balance = s.الرصيد !== undefined ? s.الرصيد : 0;
-          let grade = s.grade || 'غير محدد';
-          let password = s.password || '';
           tbody.innerHTML += `
             <tr>
               <td>${s.email}</td>
-              <td><span style="color: #00bcd4;">${password}</span></td>
-              <td><span style="color: #ffc107; font-weight: bold;">${grade}</span></td>
+              <td><span style="color: #00bcd4;">${s.password || ''}</span></td>
+              <td><span style="color: #ffc107; font-weight: bold;">${s.grade}</span></td>
               <td>${balance} ج.م</td>
               <td>
-                <button class="btn-charge" onclick="chargeIndividual('${s.email}', ${balance})">شحن 💳</button>
-                <button class="btn-delete" onclick="deleteStudent('${s.email}')">حذف ❌</button>
+                <button class="btn-charge" onclick="chargeIndividual('${s.email}', ${balance}, '${gradeName}')">شحن 💳</button>
+                <button class="btn-delete" onclick="deleteStudent('${s.email}', '${gradeName}')">حذف ❌</button>
               </td>
             </tr>
           `;
         });
       } catch(err) {
-        document.getElementById('students-table-body').innerHTML = `<tr><td colspan="5" style="color:red;">خطأ في الاتصال!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">خطأ في الاتصال!</td></tr>`;
       }
     }
 
-    async function loadVideos() {
+    // فلترة وعرض فيديوهات سنة معينة
+    async function filterVideos(gradeName, el) {
+      switchTab('tab-videos-list');
+      document.getElementById('videos-title').innerText = `🎥 فيديوهات ${gradeName}`;
+      let tbody = document.getElementById('videos-table-body');
+      tbody.innerHTML = `<tr><td colspan="4">جاري التحميل...</td></tr>`;
+
       try {
         let res = await fetch(API_URL);
         let data = await res.json();
-        let tbody = document.getElementById('videos-table-body');
         tbody.innerHTML = "";
 
-        let videos = data.filter(v => v.videoTitle);
+        let filtered = data.filter(v => v.videoTitle && v.videoGrade && v.videoGrade.trim() === gradeName);
 
-        if(videos.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4">لا توجد فيديوهات مضافة حالياً.</td></tr>`;
+        if(filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4">لا توجد فيديوهات مضافة لهذا الصف حالياً.</td></tr>`;
           return;
         }
 
-        videos.forEach(v => {
+        filtered.forEach(v => {
           tbody.innerHTML += `
             <tr>
-              <td><span style="color: #00bcd4;">${v.videoGrade || 'عام'}</span></td>
               <td>${v.videoTitle}</td>
               <td>${v.videoPrice || 0} ج.م</td>
+              <td><a href="${v.videoUrl}" target="_blank" style="color:#00bcd4;">رابط الفيديو</a></td>
               <td>
-                <button class="btn-delete" onclick="deleteVideo('${encodeURIComponent(v.videoTitle)}')">حذف ❌</button>
+                <button class="btn-delete" onclick="deleteVideo('${encodeURIComponent(v.videoTitle)}', '${gradeName}')">حذف ❌</button>
               </td>
             </tr>
           `;
         });
       } catch(err) {
-        document.getElementById('videos-table-body').innerHTML = `<tr><td colspan="4" style="color:red;">خطأ في جلب الفيديوهات!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red;">خطأ في جلب الفيديوهات!</td></tr>`;
       }
     }
 
-    async function deleteVideo(encodedTitle) {
+    async function deleteVideo(encodedTitle, gradeName) {
       if(!confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً؟")) return;
       let res = await fetch(`${API_URL}/videoTitle/${encodedTitle}`, { method: 'DELETE' });
-      if(res.ok) { alert("تم الحذف بنجاح!"); loadVideos(); }
+      if(res.ok) { alert("تم الحذف بنجاح!"); filterVideos(gradeName); }
       else { alert("فشل الحذف."); }
     }
 
-    async function chargeIndividual(email, currentBalance) {
+    async function chargeIndividual(email, currentBalance, gradeName) {
       let amountStr = prompt(`أدخل المبلغ المراد إضافته لإيميل (${email}):`);
       if (!amountStr) return;
       let amount = Number(amountStr);
@@ -246,7 +290,7 @@
         body: JSON.stringify({ data: { الرصيد: newBalance } })
       });
 
-      if (res.ok) { alert("تم الشحن بنجاح!"); loadStudents(); }
+      if (res.ok) { alert("تم الشحن بنجاح!"); filterStudents(gradeName); }
       else { alert("فشل الشحن."); }
     }
 
@@ -273,16 +317,15 @@
         document.getElementById('add-email').value = "";
         document.getElementById('add-password').value = "";
         document.getElementById('add-balance').value = "";
-        loadStudents();
       } else {
         msg.style.color = "#ff4d4d"; msg.innerText = "حدث خطأ.";
       }
     }
 
-    async function deleteStudent(email) {
+    async function deleteStudent(email, gradeName) {
       if(!confirm(`هل أنت متأكد من حذف الطالب: ${email}؟`)) return;
       let res = await fetch(`${API_URL}/email/${encodeURIComponent(email)}`, { method: 'DELETE' });
-      if(res.ok) { alert("تم الحذف بنجاح!"); loadStudents(); }
+      if(res.ok) { alert("تم الحذف بنجاح!"); filterStudents(gradeName); }
       else { alert("فشل الحذف."); }
     }
 
@@ -305,7 +348,6 @@
         }
       }
       msg.style.color = "#28a745"; msg.innerText = "تم الشحن للجميع بنجاح! 💰";
-      loadStudents();
     }
 
     async function addVideoToPlatform() {
