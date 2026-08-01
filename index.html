@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-     <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maestro Academy</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الطلاب التعليمية</title>
+
+    <!-- إعدادات تطبيق الـ PWA ليكون له لوجو واسم مستقل على الموبايل -->
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="manifest.json">
+
   <style>
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; box-sizing: border-box; }
     .container { max-width: 650px; margin: 30px auto; padding: 15px; }
@@ -28,7 +30,7 @@
     .btn-unlock { background: #28a745; color: #fff; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; }
     .btn-play-action { background: #00bcd4; color: #000; padding: 10px 15px; border-radius: 6px; width: 100%; font-size: 14px; font-weight: bold; }
     
-    /* حاوية الفيديو مع زرار التكبير اليدوي المضمون */
+    /* حاوية الفيديو مع زرار التكبير اليدوي المضمن */
     .video-container { margin-top: 10px; position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
     .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
     .shield-top { position: absolute; top: 0; left: 0; width: 100%; height: 45px; background: transparent; z-index: 99; }
@@ -225,7 +227,7 @@
           <div class="video-card">
             <div class="video-info">
               <h4>${title}</h4>
-              <p>السعر: ${price} ج.م | عدد المشاهدات المستهلكة: <span style="color:#ffc107">${viewsUsed}</span> / 2</p>
+              <p>السعر: ${price} ج.م \vert{} عدد المشاهدات المستهلكة: <span style="color:#ffc107">${viewsUsed}</span> / 2</p>
             </div>
             <div>
               ${actionHtml}
@@ -282,7 +284,7 @@
       
       if (studentInDb) {
         let viewsMap = {};
-        let watchedRaw = (studentInDb.المשاهدات || "").split(',');
+        let watchedRaw = (studentInDb.المشاهدات || "").split(',');
         watchedRaw.forEach(item => {
           let parts = item.split(':');
           if(parts[0].trim() !== "") viewsMap[parts[0].trim()] = parts[1] ? parseInt(parts[1]) : 1;
